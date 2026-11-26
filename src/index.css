@@ -15,7 +15,45 @@ body {
   font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
   background-color: #F8FAFC;
   color: #0F172A;
+  accent-color: var(--accent);
   overflow-x: hidden;
+}
+
+/* Single-row scrollbar hiding for accessible horizontal tablists */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Accessible Choice Cards without layout jump on selection */
+.basma-choice-card {
+  border: 2px solid #E2E8F0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.basma-choice-card:has(> input:checked) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  background-color: #F8FAFC;
+}
+.basma-choice-card:has(> input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Accessible Tab underline indicator (safe in Forced Colors Mode) */
+.basma-tab-btn {
+  position: relative;
+}
+.basma-tab-btn[aria-selected='true'] {
+  color: var(--accent);
+}
+.basma-tab-btn[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  inset: auto 8px 0 8px;
+  border-block-end: 3px solid var(--accent);
 }
 
 /* Subtle custom scrollbars for editor & preview panes */
@@ -119,7 +157,15 @@ dialog::backdrop {
     display: none !important;
   }
 
-  #tab-ats {
+  [data-print-target='card'] #tab-ats {
+    display: none !important;
+  }
+
+  [data-print-target='card'] #card-print-sheet {
+    display: block !important;
+  }
+
+  [data-print-target='ats'] #tab-ats {
     display: block !important;
     padding: 0 !important;
     margin: 0 !important;

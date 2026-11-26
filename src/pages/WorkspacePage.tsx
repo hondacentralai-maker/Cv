@@ -3,6 +3,10 @@ import { Navigate } from 'react-router-dom';
 import { AtsSheet } from '../components/ats/AtsSheet';
 import { AtsSidebar } from '../components/ats/AtsSidebar';
 import { AuditAndMatcherTab } from '../components/audit/AuditAndMatcherTab';
+import {
+  BusinessCardStudioTab,
+  CardPrintSheet,
+} from '../components/card/BusinessCardStudioTab';
 import { EditorSidebar } from '../components/editor/EditorSidebar';
 import { PresetBar } from '../components/editor/PresetBar';
 import { ConfirmModal } from '../components/layout/ConfirmModal';
@@ -67,6 +71,8 @@ export const WorkspacePage: React.FC = () => {
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [cardPrintLayout, setCardPrintLayout] = useState<'single' | 'sheet'>('single');
+  const [printTargetOverride, setPrintTargetOverride] = useState<'ats' | 'card' | null>(null);
 
   const saveTimerRef = useRef<number | null>(null);
   const pendingVaultRef = useRef<VaultState | null>(null);
@@ -290,6 +296,7 @@ export const WorkspacePage: React.FC = () => {
   };
 
   const handleExportPdf = () => {
+    setPrintTargetOverride('ats');
     if (activeTab !== 'ats') {
       setActiveTab('ats');
     }
@@ -299,6 +306,22 @@ export const WorkspacePage: React.FC = () => {
       }, 80);
     });
   };
+
+  const handlePrintCard = (layout: 'single' | 'sheet') => {
+    setCardPrintLayout(layout);
+    setPrintTargetOverride('card');
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        window.print();
+      }, 80);
+    });
+  };
+
+  useEffect(() => {
+    const onAfterPrint = () => setPrintTargetOverride(null);
+    window.addEventListener('afterprint', onAfterPrint);
+    return () => window.removeEventListener('afterprint', onAfterPrint);
+  }, []);
 
   const handleCopyPlainTextAts = async () => {
     if (!activeData) return;
@@ -370,9 +393,13 @@ export const WorkspacePage: React.FC = () => {
 
   const atsScore = evaluateAtsReadiness(activeData).score;
   const auditScore = evaluateCvQualityAudit(activeData).overallScore;
+  const effectivePrintTarget = printTargetOverride ?? (activeTab === 'card' ? 'card' : 'ats');
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface text-ink print:bg-white print:min-h-0">
+    <div
+      data-print-target={effectivePrintTarget}
+      className="min-h-screen flex flex-col bg-surface text-ink print:bg-white print:min-h-0"
+    >
       <TopNav
         activeTab={activeTab}
         onSwitchTab={setActiveTab}
@@ -459,7 +486,29 @@ export const WorkspacePage: React.FC = () => {
           </section>
         )}
 
-        {/* TAB 2: ATS CV & PRINT (kept mounted with print:block so Ctrl+P works from any tab) */}
+        {/* TAB 2: CUSTOM BUSINESS CARD STUDIO */}
+        {activeTab === 'card' && (
+          <BusinessCardStudioTab
+            data={activeData}
+            versionName={activeVersion.name}
+            onChangeCard={(updater) =>
+              handleUpdateActiveData((prev) => ({
+                ...prev,
+                card: updater(prev.card),
+              }))
+            }
+            onPrintCard={handlePrintCard}
+          />
+        )}
+
+        {/* PRINT-ONLY BUSINESS CARD SHEET */}
+        <CardPrintSheet
+          data={activeData}
+          layout={cardPrintLayout}
+          activeForPrint={effectivePrintTarget === 'card'}
+        />
+
+        {/* TAB 3: ATS CV & PRINT (kept mounted with print:block so Ctrl+P works from any tab) */}
         <section
           id="tab-ats"
           className={`${
@@ -511,6 +560,7 @@ export const WorkspacePage: React.FC = () => {
               setMobileViewMode('editor');
             }}
             onOpenAtsTab={() => setActiveTab('ats')}
+            onOpenCardStudio={() => setActiveTab('card')}
             onImportBackup={handleImportBackup}
           />
         )}
@@ -521,6 +571,7 @@ export const WorkspacePage: React.FC = () => {
         data={activeData}
         versionName={activeVersion.name}
         onImportBackup={handleImportBackup}
+        onOpenCardStudio={() => setActiveTab('card')}
         onClose={() => setShareModalOpen(false)}
       />
 

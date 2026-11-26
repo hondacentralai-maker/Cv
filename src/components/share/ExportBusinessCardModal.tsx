@@ -1,8 +1,8 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
-import { getAccentMeta } from '../../data/presets';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { resolveBusinessCardModel } from '../../lib/cardEngine';
+import { downloadCardPng } from '../../lib/cardExport';
 import {
   buildShareIntroMessage,
-  buildVCardString,
   copyTextToClipboard,
   downloadJsonBackup,
   downloadQrPng,
@@ -10,8 +10,8 @@ import {
   downloadVCardFile,
   generateQrDataUrl,
 } from '../../lib/exportUtils';
-import { sanitizeUrl } from '../../lib/sanitize';
 import { parseImportedJsonBackup, type PortfolioData, type VaultState } from '../../types/portfolio';
+import { BusinessCardVisual } from '../card/BusinessCardVisual';
 import { useToast } from '../layout/ToastProvider';
 
 export interface ImportedBackupPayload {
@@ -25,6 +25,7 @@ interface BusinessCardExportPanelProps {
   data: PortfolioData;
   versionName: string;
   onImportBackup: (imported: ImportedBackupPayload) => void;
+  onOpenCardStudio?: () => void;
   onAfterAction?: () => void;
 }
 
@@ -32,22 +33,40 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
   data,
   versionName,
   onImportBackup,
+  onOpenCardStudio,
   onAfterAction,
 }) => {
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [includePhone, setIncludePhone] = useState<boolean>(!data.profile.hidePhoneInPortfolio);
+  const [cardSide, setCardSide] = useState<'front' | 'back'>('front');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [downloadingCard, setDownloadingCard] = useState(false);
 
   useEffect(() => {
     setIncludePhone(!data.profile.hidePhoneInPortfolio);
   }, [data.profile.hidePhoneInPortfolio]);
 
+  const effectiveCardData: PortfolioData = useMemo(
+    () => ({
+      ...data,
+      card: {
+        ...data.card,
+        showPhone: includePhone,
+      },
+    }),
+    [data, includePhone]
+  );
+
+  const resolvedModel = useMemo(
+    () => resolveBusinessCardModel(effectiveCardData),
+    [effectiveCardData]
+  );
+
   useEffect(() => {
     let cancelled = false;
-    const vcard = buildVCardString(data, includePhone);
-    generateQrDataUrl(vcard, 220)
+    generateQrDataUrl(resolvedModel.qrPayload, 240)
       .then((url) => {
         if (!cancelled) setQrDataUrl(url);
       })
@@ -57,11 +76,9 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
     return () => {
       cancelled = true;
     };
-  }, [data, includePhone]);
+  }, [resolvedModel.qrPayload]);
 
   const p = data.profile;
-  const accentMeta = getAccentMeta(data.design.accent);
-  const safePrimaryLink = sanitizeUrl(p.primaryPortfolioLink);
   const introMessage = buildShareIntroMessage(data);
 
   const handleCopyIntro = async () => {
@@ -72,6 +89,18 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
         : 'تعذّر النسخ التلقائي — يمكنك النسخ يدوياً',
       ok ? 'default' : 'amber'
     );
+  };
+
+  const handleDownloadCardPng = async () => {
+    setDownloadingCard(true);
+    try {
+      await downloadCardPng(effectiveCardData, 'both');
+      showToast('تم تحميل الكارت الشخصي (الوجهان) بصيغة PNG عالية الدقة');
+    } catch {
+      showToast('تعذّر تصدير صورة الكارت', 'rose');
+    } finally {
+      setDownloadingCard(false);
+    }
   };
 
   const handleDownloadQrPng = async () => {
@@ -123,42 +152,57 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
 
   return (
     <div className="space-y-4">
-      {/* Digital Business Card with Real Scannable vCard 3.0 QR */}
-      <div
-        className="rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden shadow-md"
-        style={{
-          background: `linear-gradient(135deg, ${accentMeta.hex} 0%, #0F172A 100%)`,
-        }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5 min-w-0">
-            <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/15 border border-white/20">
-              بطاقة أعمال رقمية — vCard 3.0 QR
-            </span>
-            <h4 className="text-lg font-bold truncate">{p.fullName || 'الاسم الكامل'}</h4>
-            <p className="text-xs text-white/85 truncate">{p.jobTitle}</p>
-            <div className="pt-2 space-y-0.5 text-[11px] text-white/85">
-              {p.city && <div>{p.city}</div>}
-              {p.email && <div dir="ltr" className="text-right truncate">{p.email}</div>}
-              {includePhone && p.phone && <div dir="ltr" className="text-right">{p.phone}</div>}
-              {safePrimaryLink && (
-                <div dir="ltr" className="text-right truncate opacity-90">
-                  {safePrimaryLink}
-                </div>
-              )}
-            </div>
+      {/* Live Customized Business Card Preview + Front/Back Switcher */}
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setCardSide('front')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                cardSide === 'front' ? 'bg-white text-ink shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              الأمام
+            </button>
+            <button
+              type="button"
+              onClick={() => setCardSide('back')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                cardSide === 'back' ? 'bg-white text-ink shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              الخلف (QR)
+            </button>
           </div>
 
-          <div className="w-28 h-28 rounded-xl bg-white p-1.5 shrink-0 flex items-center justify-center shadow-sm self-center sm:self-auto">
-            {qrDataUrl ? (
-              <img
-                src={qrDataUrl}
-                alt={`رمز QR لجهة اتصال ${p.fullName}`}
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <span className="text-[10px] text-slate-400">جاري توليد QR...</span>
-            )}
+          {onOpenCardStudio && (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenCardStudio();
+                onAfterAction?.();
+              }}
+              className="text-xs font-bold hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              تخصيص تصميم الكارت بالكامل ←
+            </button>
+          )}
+        </div>
+
+        <div className="flex justify-center">
+          <div
+            className={`w-full ${
+              data.card?.orientation === 'portrait' ? 'max-w-[230px]' : 'max-w-[420px]'
+            }`}
+          >
+            <BusinessCardVisual
+              data={effectiveCardData}
+              side={cardSide}
+              qrDataUrl={qrDataUrl}
+              compact
+            />
           </div>
         </div>
       </div>
@@ -173,7 +217,7 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
             className="w-4 h-4 rounded accent-teal-700 cursor-pointer"
           />
           <span className="text-xs text-slate-700">
-            تضمين رقم الجوال (<span dir="ltr">{p.phone}</span>) داخل رمز QR وملف جهة الاتصال (.vcf)
+            تضمين رقم الجوال (<span dir="ltr">{p.phone}</span>) داخل الكارت ورمز QR وملف (.vcf)
           </span>
         </label>
       )}
@@ -202,11 +246,24 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
         <button
           type="button"
-          onClick={handleDownloadQrPng}
-          className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs hover:opacity-95 transition-opacity"
+          onClick={handleDownloadCardPng}
+          disabled={downloadingCard}
+          className="sm:col-span-2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs hover:opacity-95 transition-opacity disabled:opacity-60"
           style={{ backgroundColor: 'var(--accent)' }}
         >
-          <span>تحميل رمز QR كصورة PNG</span>
+          <span>
+            {downloadingCard
+              ? 'جاري تجهيز صورة الكارت...'
+              : 'تحميل كارتك الشخصي المصمّم كصورة PNG (300 DPI)'}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDownloadQrPng}
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors"
+        >
+          <span>تحميل رمز QR (PNG)</span>
         </button>
 
         <button
@@ -270,6 +327,7 @@ interface ExportBusinessCardModalProps {
   data: PortfolioData;
   versionName: string;
   onImportBackup: (imported: ImportedBackupPayload) => void;
+  onOpenCardStudio?: () => void;
   onClose: () => void;
 }
 
@@ -278,6 +336,7 @@ export const ExportBusinessCardModal: React.FC<ExportBusinessCardModalProps> = (
   data,
   versionName,
   onImportBackup,
+  onOpenCardStudio,
   onClose,
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -361,6 +420,7 @@ export const ExportBusinessCardModal: React.FC<ExportBusinessCardModalProps> = (
           data={data}
           versionName={versionName}
           onImportBackup={onImportBackup}
+          onOpenCardStudio={onOpenCardStudio}
           onAfterAction={onClose}
         />
       </div>

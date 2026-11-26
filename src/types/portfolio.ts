@@ -114,10 +114,146 @@ export const LanguageItemSchema = z.object({
 });
 export type LanguageItem = z.infer<typeof LanguageItemSchema>;
 
+export const CardTemplateIdSchema = z.enum([
+  'modern_split',
+  'executive_dark',
+  'minimal_swiss',
+  'creative_mesh',
+]);
+export type CardTemplateId = z.infer<typeof CardTemplateIdSchema>;
+
+export const CardPurposeIdSchema = z.enum([
+  'networking',
+  'client',
+  'executive',
+  'qr_first',
+]);
+export type CardPurposeId = z.infer<typeof CardPurposeIdSchema>;
+
+export const CardOrientationSchema = z.enum(['landscape', 'portrait']);
+export type CardOrientation = z.infer<typeof CardOrientationSchema>;
+
+export const CardPatternSchema = z.enum([
+  'none',
+  'dots',
+  'grid',
+  'waves',
+  'circuit',
+]);
+export type CardPattern = z.infer<typeof CardPatternSchema>;
+
+export const CardCornerStyleSchema = z.enum(['sharp', 'soft', 'rounded']);
+export type CardCornerStyle = z.infer<typeof CardCornerStyleSchema>;
+
+export const CardFontScaleSchema = z.enum(['compact', 'balanced', 'bold']);
+export type CardFontScale = z.infer<typeof CardFontScaleSchema>;
+
+export const CardAvatarModeSchema = z.enum([
+  'profile',
+  'initials',
+  'custom_logo',
+  'none',
+]);
+export type CardAvatarMode = z.infer<typeof CardAvatarModeSchema>;
+
+export const CardQrTargetSchema = z.enum(['vcard', 'whatsapp', 'link']);
+export type CardQrTarget = z.infer<typeof CardQrTargetSchema>;
+
+export const CardQrPlacementSchema = z.enum(['back', 'front', 'both']);
+export type CardQrPlacement = z.infer<typeof CardQrPlacementSchema>;
+
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+export const DEFAULT_BUSINESS_CARD_CONFIG = {
+  template: 'modern_split' as const,
+  purpose: 'networking' as const,
+  orientation: 'landscape' as const,
+  pattern: 'dots' as const,
+  cornerStyle: 'soft' as const,
+  fontScale: 'balanced' as const,
+  useBrandAccent: true,
+  bgColor: '#0F172A',
+  accentColor: '#0F766E',
+  textColor: '#FFFFFF',
+  syncFromProfile: true,
+  customFullName: '',
+  customJobTitle: '',
+  companyOrBrand: '',
+  tagline: '',
+  customEmail: '',
+  customPhone: '',
+  customCity: '',
+  customWebsite: '',
+  avatarMode: 'profile' as const,
+  customLogoDataUrl: '',
+  qrTarget: 'vcard' as const,
+  qrPlacement: 'back' as const,
+  qrCaption: 'امسح لحفظ جهة الاتصال',
+  whatsappPrefill: 'السلام عليكم، وصلت إليك عبر كارت بصمة الشخصي.',
+  showPhone: true,
+  showEmail: true,
+  showCity: true,
+  showWebsite: true,
+  showAvailabilityBadge: true,
+  showSkillsOnBack: true,
+  backNote: '',
+  doubleSided: true,
+};
+
+export const BusinessCardConfigSchema = z.object({
+  template: CardTemplateIdSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.template),
+  purpose: CardPurposeIdSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.purpose),
+  orientation: CardOrientationSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.orientation),
+  pattern: CardPatternSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.pattern),
+  cornerStyle: CardCornerStyleSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.cornerStyle),
+  fontScale: CardFontScaleSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.fontScale),
+  useBrandAccent: z.boolean().default(DEFAULT_BUSINESS_CARD_CONFIG.useBrandAccent),
+  bgColor: z
+    .string()
+    .regex(HEX_COLOR_RE)
+    .catch(DEFAULT_BUSINESS_CARD_CONFIG.bgColor)
+    .default(DEFAULT_BUSINESS_CARD_CONFIG.bgColor),
+  accentColor: z
+    .string()
+    .regex(HEX_COLOR_RE)
+    .catch(DEFAULT_BUSINESS_CARD_CONFIG.accentColor)
+    .default(DEFAULT_BUSINESS_CARD_CONFIG.accentColor),
+  textColor: z
+    .string()
+    .regex(HEX_COLOR_RE)
+    .catch(DEFAULT_BUSINESS_CARD_CONFIG.textColor)
+    .default(DEFAULT_BUSINESS_CARD_CONFIG.textColor),
+  syncFromProfile: z.boolean().default(DEFAULT_BUSINESS_CARD_CONFIG.syncFromProfile),
+  customFullName: z.string().default(''),
+  customJobTitle: z.string().default(''),
+  companyOrBrand: z.string().default(''),
+  tagline: z.string().default(''),
+  customEmail: z.string().default(''),
+  customPhone: z.string().default(''),
+  customCity: z.string().default(''),
+  customWebsite: z.string().default(''),
+  avatarMode: CardAvatarModeSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.avatarMode),
+  customLogoDataUrl: z.string().default(''),
+  qrTarget: CardQrTargetSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.qrTarget),
+  qrPlacement: CardQrPlacementSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.qrPlacement),
+  qrCaption: z.string().default(DEFAULT_BUSINESS_CARD_CONFIG.qrCaption),
+  whatsappPrefill: z.string().default(DEFAULT_BUSINESS_CARD_CONFIG.whatsappPrefill),
+  showPhone: z.boolean().default(true),
+  showEmail: z.boolean().default(true),
+  showCity: z.boolean().default(true),
+  showWebsite: z.boolean().default(true),
+  showAvailabilityBadge: z.boolean().default(true),
+  showSkillsOnBack: z.boolean().default(true),
+  backNote: z.string().default(''),
+  doubleSided: z.boolean().default(true),
+});
+export type BusinessCardConfig = z.infer<typeof BusinessCardConfigSchema>;
+
 export const PortfolioDataSchema = z.object({
   presetId: PresetIdSchema.default('dev'),
   profile: ProfileSchema,
   design: DesignSchema,
+  card: BusinessCardConfigSchema.default(DEFAULT_BUSINESS_CARD_CONFIG),
   projects: z.array(ProjectItemSchema).default([]),
   experience: z.array(ExperienceItemSchema).default([]),
   education: z.array(EducationItemSchema).default([]),
@@ -153,12 +289,20 @@ export const JsonBackupEnvelopeSchema = z.object({
 });
 
 function sanitizeParsedPortfolio(data: PortfolioData): PortfolioData {
+  const safeCardLogo = sanitizeAvatarSrc(data.card?.customLogoDataUrl);
+  const safeCardWebsite = sanitizeUrl(data.card?.customWebsite);
   return {
     ...data,
     profile: {
       ...data.profile,
       avatarDataUrl: sanitizeAvatarSrc(data.profile.avatarDataUrl),
       primaryPortfolioLink: sanitizeUrl(data.profile.primaryPortfolioLink),
+    },
+    card: {
+      ...DEFAULT_BUSINESS_CARD_CONFIG,
+      ...data.card,
+      customLogoDataUrl: safeCardLogo,
+      customWebsite: safeCardWebsite,
     },
     projects: data.projects.map((p) => ({
       ...p,

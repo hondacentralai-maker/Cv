@@ -1,9 +1,10 @@
-import type {
-  AvailabilityId,
-  PortfolioData,
-  PresetId,
-  ProfileData,
-  TemplateId,
+import {
+  DEFAULT_BUSINESS_CARD_CONFIG,
+  type AvailabilityId,
+  type PortfolioData,
+  type PresetId,
+  type ProfileData,
+  type TemplateId,
 } from '../types/portfolio';
 
 export interface AccentOption {
@@ -145,7 +146,9 @@ const ALL_BLOCKS = {
   links: true,
 };
 
-const PRESETS_DATA: Record<PresetId, PortfolioData> = {
+type PresetBaseData = Omit<PortfolioData, 'card'>;
+
+const PRESETS_DATA: Record<PresetId, PresetBaseData> = {
   dev: {
     presetId: 'dev',
     profile: {
@@ -948,7 +951,14 @@ const PRESETS_DATA: Record<PresetId, PortfolioData> = {
 };
 
 export function buildPresetData(presetKey: PresetId = 'dev'): PortfolioData {
-  return structuredClone(PRESETS_DATA[presetKey] ?? PRESETS_DATA.dev);
+  const base = structuredClone(PRESETS_DATA[presetKey] ?? PRESETS_DATA.dev);
+  return {
+    ...base,
+    card: {
+      ...DEFAULT_BUSINESS_CARD_CONFIG,
+      accentColor: base.design.accent,
+    },
+  };
 }
 
 /**

@@ -19,6 +19,7 @@ interface AuditAndMatcherTabProps {
   onAddSkill: (skill: string) => void;
   onJumpToEditorSection: (section: EditorSectionId) => void;
   onOpenAtsTab: () => void;
+  onOpenCardStudio: () => void;
   onImportBackup: (imported: ImportedBackupPayload) => void;
 }
 
@@ -28,6 +29,7 @@ export const AuditAndMatcherTab: React.FC<AuditAndMatcherTabProps> = ({
   onAddSkill,
   onJumpToEditorSection,
   onOpenAtsTab,
+  onOpenCardStudio,
   onImportBackup,
 }) => {
   const { showToast } = useToast();
@@ -366,6 +368,7 @@ export const AuditAndMatcherTab: React.FC<AuditAndMatcherTabProps> = ({
             data={data}
             versionName={versionName}
             onImportBackup={onImportBackup}
+            onOpenCardStudio={onOpenCardStudio}
           />
         </div>
       </div>

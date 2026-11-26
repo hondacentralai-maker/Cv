@@ -6,7 +6,7 @@ import { formatPhoneDisplay } from '../../lib/supabase';
 import { MAX_PROFILE_VERSIONS, type ProfileVersion } from '../../types/portfolio';
 import { LocalStorageBadge } from './LocalStorageBadge';
 
-export type WorkspaceTabId = 'editor' | 'ats' | 'audit';
+export type WorkspaceTabId = 'editor' | 'card' | 'ats' | 'audit';
 
 interface TopNavProps {
   activeTab: WorkspaceTabId;
@@ -133,7 +133,8 @@ export const TopNav: React.FC<TopNavProps> = ({
             <button
               type="button"
               onClick={() => onSwitchTab('editor')}
-              className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              aria-current={activeTab === 'editor' ? 'page' : undefined}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === 'editor'
                   ? 'bg-white text-ink shadow-sm'
                   : 'text-slate-600 hover:text-ink'
@@ -155,8 +156,35 @@ export const TopNav: React.FC<TopNavProps> = ({
 
             <button
               type="button"
+              onClick={() => onSwitchTab('card')}
+              aria-current={activeTab === 'card' ? 'page' : undefined}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                activeTab === 'card'
+                  ? 'bg-white text-ink shadow-sm'
+                  : 'text-slate-600 hover:text-ink'
+              }`}
+            >
+              <svg
+                className="w-4 h-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="6" y1="10" x2="12" y2="10" />
+                <line x1="6" y1="14" x2="10" y2="14" />
+                <rect x="15" y="9" width="4" height="4" rx="0.5" />
+              </svg>
+              <span>الكارت الشخصي</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => onSwitchTab('ats')}
-              className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              aria-current={activeTab === 'ats' ? 'page' : undefined}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === 'ats'
                   ? 'bg-white text-ink shadow-sm'
                   : 'text-slate-600 hover:text-ink'
