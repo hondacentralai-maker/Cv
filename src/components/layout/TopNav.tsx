@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import type { StorageBackend } from '../../lib/localVault';
+import { formatPhoneDisplay } from '../../lib/supabase';
 import { MAX_PROFILE_VERSIONS, type ProfileVersion } from '../../types/portfolio';
 import { LocalStorageBadge } from './LocalStorageBadge';
 
@@ -455,10 +456,16 @@ export const TopNav: React.FC<TopNavProps> = ({
                   navigate('/auth');
                 }}
                 className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-line transition-colors"
-                title={user.email ?? 'الحساب المسجل'}
+                title={
+                  formatPhoneDisplay(
+                    user.phone || (user.user_metadata?.phone as string | undefined)
+                  ) || 'الحساب المسجل'
+                }
               >
-                <span className="hidden md:inline max-w-[110px] truncate" dir="ltr">
-                  {user.email}
+                <span className="hidden md:inline max-w-[120px] truncate" dir="ltr">
+                  {formatPhoneDisplay(
+                    user.phone || (user.user_metadata?.phone as string | undefined)
+                  ) || 'حسابي'}
                 </span>
                 <span className="text-rose-700 font-semibold">خروج</span>
               </button>

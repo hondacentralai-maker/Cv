@@ -26,6 +26,7 @@ import {
   evaluateAtsReadiness,
   evaluateCvQualityAudit,
 } from '../lib/atsEngine';
+import { formatPhoneDisplay } from '../lib/supabase';
 import {
   copyTextToClipboard,
   downloadJsonBackup,
@@ -97,11 +98,13 @@ export const WorkspacePage: React.FC = () => {
 
         let nextVault = loaded.vault;
 
-        // Auto-fill Google / OAuth name and email if user hasn't set custom identity yet
+        // Auto-fill registered user's name and phone if user hasn't set custom identity yet
         if (user) {
           const activeVer = getActiveVersion(nextVault);
           if (isDemoIdentity(activeVer.data.profile)) {
-            const oauthEmail = user.email?.trim() ?? '';
+            const authPhone = formatPhoneDisplay(
+              user.phone || (user.user_metadata?.phone as string | undefined)
+            );
             const metaName =
               (typeof user.user_metadata?.full_name === 'string' &&
                 user.user_metadata.full_name.trim()) ||
@@ -109,13 +112,13 @@ export const WorkspacePage: React.FC = () => {
                 user.user_metadata.name.trim()) ||
               '';
 
-            if (oauthEmail || metaName) {
+            if (authPhone || metaName) {
               const updatedData: PortfolioData = {
                 ...activeVer.data,
                 profile: {
                   ...activeVer.data.profile,
                   fullName: metaName || activeVer.data.profile.fullName,
-                  email: oauthEmail || activeVer.data.profile.email,
+                  phone: authPhone || activeVer.data.profile.phone,
                 },
               };
               nextVault = updateActiveVersionData(nextVault, updatedData);

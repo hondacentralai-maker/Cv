@@ -1,6 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import {
+  callPhoneAuthEndpoint,
+  isSupabaseConfigured,
+  supabase,
+} from '../lib/supabase';
 
 const GUEST_SESSION_KEY = 'basma_guest_session_v1';
 
@@ -15,18 +19,19 @@ interface AuthContextValue {
   isGuest: boolean;
   loading: boolean;
   isSupabaseConfigured: boolean;
-  isPasswordRecovery: boolean;
-  clearPasswordRecovery: () => void;
   continueAsGuest: () => void;
-  signInWithEmail: (email: string, password: string) => Promise<AuthActionResult>;
-  signUpWithEmail: (
-    email: string,
+  signInWithPhone: (e164Phone: string, password: string) => Promise<AuthActionResult>;
+  signUpWithPhone: (
+    e164Phone: string,
     password: string,
+    pin: string,
     fullName?: string
   ) => Promise<AuthActionResult>;
-  signInWithGoogle: () => Promise<AuthActionResult>;
-  sendPasswordReset: (email: string) => Promise<AuthActionResult>;
-  updatePassword: (newPassword: string) => Promise<AuthActionResult>;
+  resetPasswordWithPin: (
+    e164Phone: string,
+    pin: string,
+    newPassword: string
+  ) => Promise<AuthActionResult>;
   signOut: () => Promise<void>;
 }
 
@@ -55,13 +60,13 @@ function writeGuestFlag(enabled: boolean): void {
 function translateAuthError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes('invalid login credentials')) {
-    return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    return 'رقم الهاتف أو كلمة المرور غير صحيحة.';
   }
-  if (lower.includes('email not confirmed')) {
-    return 'يرجى تأكيد بريدك الإلكتروني عبر الرابط المرسل إليك أولاً.';
+  if (lower.includes('phone logins are disabled')) {
+    return 'تسجيل الدخول برقم الهاتف غير مفعّل في إعدادات Supabase.';
   }
-  if (lower.includes('user already registered')) {
-    return 'هذا البريد الإلكتروني مسجل مسبقاً — يمكنك تسجيل الدخول مباشرة.';
+  if (lower.includes('already registered') || lower.includes('already exists')) {
+    return 'رقم الهاتف مسجل مسبقاً — يمكنك تسجيل الدخول مباشرة أو استعادة كلمة المرور.';
   }
   if (lower.includes('password should be at least')) {
     return 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.';
@@ -79,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     !isSupabaseConfigured ? true : readGuestFlag()
   );
   const [loading, setLoading] = useState<boolean>(isSupabaseConfigured);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -107,14 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsPasswordRecovery(true);
-      }
 
       if (nextSession?.user) {
         writeGuestFlag(false);
@@ -134,17 +134,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsGuest(true);
   }, []);
 
-  const clearPasswordRecovery = useCallback(() => {
-    setIsPasswordRecovery(false);
-  }, []);
-
-  const signInWithEmail = useCallback(
-    async (email: string, password: string): Promise<AuthActionResult> => {
+  const signInWithPhone = useCallback(
+    async (e164Phone: string, password: string): Promise<AuthActionResult> => {
       if (!supabase) {
         return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
       }
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        phone: e164Phone,
         password,
       });
       if (error) {
@@ -155,83 +151,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     []
   );
 
-  const signUpWithEmail = useCallback(
+  const signUpWithPhone = useCallback(
     async (
-      email: string,
+      e164Phone: string,
       password: string,
+      pin: string,
       fullName?: string
     ): Promise<AuthActionResult> => {
       if (!supabase) {
         return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
       }
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/workspace`,
-          data: fullName?.trim() ? { full_name: fullName.trim() } : undefined,
-        },
-      });
-      if (error) {
-        return { error: translateAuthError(error.message) };
+
+      try {
+        const res = await callPhoneAuthEndpoint({
+          action: 'signup',
+          phone: e164Phone,
+          password,
+          pin,
+          fullName: fullName?.trim() ?? '',
+        });
+
+        if (!res.ok) {
+          return {
+            error:
+              (typeof res.data.error === 'string' && res.data.error) ||
+              'تعذّر إنشاء الحساب.',
+          };
+        }
+
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          phone: e164Phone,
+          password,
+        });
+        if (signInErr) {
+          return { error: translateAuthError(signInErr.message) };
+        }
+        return { error: null, message: 'تم إنشاء الحساب وتسجيل الدخول بنجاح.' };
+      } catch {
+        return { error: 'تعذّر الاتصال بخادم المصادقة — تحقق من اتصالك بالإنترنت.' };
       }
-      if (!data.session) {
+    },
+    []
+  );
+
+  const resetPasswordWithPin = useCallback(
+    async (
+      e164Phone: string,
+      pin: string,
+      newPassword: string
+    ): Promise<AuthActionResult> => {
+      if (!supabase) {
+        return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
+      }
+
+      try {
+        const res = await callPhoneAuthEndpoint({
+          action: 'reset-password',
+          phone: e164Phone,
+          pin,
+          newPassword,
+        });
+
+        if (!res.ok) {
+          return {
+            error:
+              (typeof res.data.error === 'string' && res.data.error) ||
+              'رقم الهاتف أو رمز PIN غير صحيح.',
+          };
+        }
+
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          phone: e164Phone,
+          password: newPassword,
+        });
+        if (signInErr) {
+          return {
+            error: null,
+            message: 'تم تحديث كلمة المرور بنجاح — يمكنك تسجيل الدخول الآن.',
+          };
+        }
+
         return {
           error: null,
-          message: 'تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتفعيل الدخول.',
+          message: 'تمت استعادة الحساب وتحديث كلمة المرور بنجاح.',
         };
+      } catch {
+        return { error: 'تعذّر الاتصال بخادم المصادقة — تحقق من اتصالك بالإنترنت.' };
       }
-      return { error: null, message: 'تم إنشاء حسابك وتسجيل الدخول بنجاح.' };
-    },
-    []
-  );
-
-  const signInWithGoogle = useCallback(async (): Promise<AuthActionResult> => {
-    if (!supabase) {
-      return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
-    }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/workspace`,
-      },
-    });
-    if (error) {
-      return { error: translateAuthError(error.message) };
-    }
-    return { error: null };
-  }, []);
-
-  const sendPasswordReset = useCallback(
-    async (email: string): Promise<AuthActionResult> => {
-      if (!supabase) {
-        return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
-      }
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth`,
-      });
-      if (error) {
-        return { error: translateAuthError(error.message) };
-      }
-      return {
-        error: null,
-        message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.',
-      };
-    },
-    []
-  );
-
-  const updatePassword = useCallback(
-    async (newPassword: string): Promise<AuthActionResult> => {
-      if (!supabase) {
-        return { error: 'مفاتيح Supabase غير مضبوطة في البيئة المحلية.' };
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        return { error: translateAuthError(error.message) };
-      }
-      setIsPasswordRecovery(false);
-      return { error: null, message: 'تم تحديث كلمة المرور بنجاح.' };
     },
     []
   );
@@ -254,14 +260,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGuest,
         loading,
         isSupabaseConfigured,
-        isPasswordRecovery,
-        clearPasswordRecovery,
         continueAsGuest,
-        signInWithEmail,
-        signUpWithEmail,
-        signInWithGoogle,
-        sendPasswordReset,
-        updatePassword,
+        signInWithPhone,
+        signUpWithPhone,
+        resetPasswordWithPin,
         signOut,
       }}
     >
