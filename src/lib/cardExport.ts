@@ -149,6 +149,25 @@ function drawSurfacePattern(
       ctx.arc(0, h, 140 + i * 75, -Math.PI / 2, 0);
       ctx.stroke();
     }
+  } else if (pattern === 'diagonal') {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.2;
+    for (let d = -h; d < w + h; d += 32) {
+      ctx.beginPath();
+      ctx.moveTo(d, 0);
+      ctx.lineTo(d + h, h);
+      ctx.stroke();
+    }
+  } else if (pattern === 'topography') {
+    ctx.strokeStyle = accentStroke;
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < 4; i++) {
+      const oy = 90 + i * 70;
+      ctx.beginPath();
+      ctx.moveTo(-20, oy);
+      ctx.bezierCurveTo(w * 0.25, oy - 70, w * 0.65, oy + 90, w + 20, oy - 20);
+      ctx.stroke();
+    }
   } else if (pattern === 'circuit') {
     ctx.strokeStyle = accentStroke;
     ctx.lineWidth = 2;
@@ -196,6 +215,21 @@ function drawTemplateBackground(
     ctx.arc(w * 0.14, h * 0.85, Math.min(w, h) * 0.34, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  } else if (template === 'glass_aurora') {
+    ctx.fillStyle = model.effectiveBg;
+    ctx.fillRect(0, 0, w, h);
+
+    const g1 = ctx.createRadialGradient(w * 0.85, h * 0.2, 20, w * 0.85, h * 0.2, w * 0.55);
+    g1.addColorStop(0, hexWithAlpha(model.effectiveAccent, 0.72));
+    g1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, w, h);
+
+    const g2 = ctx.createRadialGradient(w * 0.16, h * 0.85, 20, w * 0.16, h * 0.85, w * 0.5);
+    g2.addColorStop(0, hexWithAlpha(model.effectiveAccent, 0.5));
+    g2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, w, h);
   } else {
     ctx.fillStyle = model.effectiveBg;
     ctx.fillRect(0, 0, w, h);
@@ -204,7 +238,6 @@ function drawTemplateBackground(
   drawSurfacePattern(ctx, model, w, h);
 
   if (template === 'modern_split') {
-    // RTL accent strip on the right edge
     ctx.fillStyle = model.effectiveAccent;
     ctx.fillRect(w - 18, 0, 18, h);
   } else if (template === 'minimal_swiss') {
@@ -217,6 +250,55 @@ function drawTemplateBackground(
     roundedRectPath(ctx, 18, 18, w - 36, h - 36, 18);
     ctx.stroke();
     ctx.restore();
+  } else if (template === 'glass_aurora') {
+    ctx.save();
+    roundedRectPath(ctx, 26, 26, w - 52, h - 52, 24);
+    ctx.fillStyle = hexWithAlpha('#FFFFFF', model.isLightBg ? 0.58 : 0.11);
+    ctx.fill();
+    ctx.strokeStyle = hexWithAlpha('#FFFFFF', model.isLightBg ? 0.65 : 0.24);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  } else if (template === 'bento_tile') {
+    ctx.save();
+    roundedRectPath(ctx, 22, 22, w - 44, h - 44, 24);
+    ctx.fillStyle = hexWithAlpha('#FFFFFF', model.isLightBg ? 0.78 : 0.05);
+    ctx.fill();
+    ctx.strokeStyle = model.borderColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  } else if (template === 'terminal_dev') {
+    ctx.save();
+    ctx.fillStyle = hexWithAlpha('#FFFFFF', model.isLightBg ? 0.06 : 0.05);
+    ctx.fillRect(0, 0, w, 50);
+    ctx.strokeStyle = model.borderColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 50);
+    ctx.lineTo(w, 50);
+    ctx.stroke();
+    const dotColors = ['#F43F5E', '#FBBF24', '#34D399'];
+    dotColors.forEach((col, i) => {
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(w - 42 - i * 24, 25, 7, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = model.mutedText;
+    ctx.font = `600 17px monospace`;
+    ctx.fillText('~/basma-card.vcf', 36, 25);
+    ctx.restore();
+  } else if (template === 'editorial_stripe') {
+    ctx.fillStyle = model.effectiveAccent;
+    ctx.fillRect(0, 0, 12, h);
+    ctx.fillStyle = model.mutedText;
+    ctx.font = `700 20px monospace`;
+    ctx.fillText('+', w - 34, 30);
+    ctx.fillText('+', 28, h - 22);
   }
 }
 
@@ -336,6 +418,7 @@ export async function renderCardSideToCanvas(
   drawTemplateBackground(ctx, model, w, h);
 
   const pad = orientation === 'portrait' ? 48 : 56;
+  const topOffset = model.config.template === 'terminal_dev' ? 42 : 0;
 
   if (side === 'front') {
     const rightAnchor = w - pad - (model.config.template === 'modern_split' ? 14 : 0);
@@ -348,13 +431,13 @@ export async function renderCardSideToCanvas(
       const contentMaxWidth = showQrOnFront ? w - pad * 2 - qrBoxSize - 38 : w - pad * 2 - 20;
 
       if (hasAvatar) {
-        drawAvatarOrBadge(ctx, avatarImg, model, rightAnchor - avatarSize, pad, avatarSize);
+        drawAvatarOrBadge(ctx, avatarImg, model, rightAnchor - avatarSize, pad + topOffset, avatarSize);
       }
 
       const textRightX = hasAvatar ? rightAnchor - avatarSize - 24 : rightAnchor;
       const headerWidth = contentMaxWidth - (hasAvatar ? avatarSize + 24 : 0);
 
-      let cursorY = pad;
+      let cursorY = pad + topOffset;
       if (model.companyOrBrand) {
         ctx.direction = 'rtl';
         ctx.textAlign = 'right';
@@ -437,7 +520,7 @@ export async function renderCardSideToCanvas(
       }
     } else {
       // Portrait front layout
-      let cursorY = pad;
+      let cursorY = pad + topOffset;
       if (hasAvatar) {
         drawAvatarOrBadge(ctx, avatarImg, model, rightAnchor - avatarSize, cursorY, avatarSize);
         cursorY += avatarSize + 22;
@@ -511,7 +594,7 @@ export async function renderCardSideToCanvas(
 
       const infoX = rightAnchor;
       const infoWidth = showQrOnBack ? w - pad * 2 - qrSize - 46 : w - pad * 2;
-      let y = pad + 26;
+      let y = pad + 26 + topOffset;
 
       ctx.direction = 'rtl';
       ctx.textAlign = 'right';
@@ -569,7 +652,7 @@ export async function renderCardSideToCanvas(
       }
     } else {
       // Portrait back layout
-      let y = pad + 18;
+      let y = pad + 18 + topOffset;
       ctx.direction = 'rtl';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -706,9 +789,11 @@ export function buildStandaloneInteractiveCardHtml(
     .stage { ${ratioStyle} perspective: 1200px; }
     .card {
       position: relative;
-      border-radius: 18px;
+      border-radius: ${model.config.template === 'editorial_stripe' ? '4px' : '18px'};
       background: ${model.config.template === 'creative_mesh'
         ? `linear-gradient(135deg, ${model.effectiveBg} 0%, ${model.effectiveAccent} 100%)`
+        : model.config.template === 'glass_aurora'
+        ? `radial-gradient(circle at 84% 18%, ${hexWithAlpha(model.effectiveAccent, 0.72)} 0%, transparent 52%), radial-gradient(circle at 16% 86%, ${hexWithAlpha(model.effectiveAccent, 0.52)} 0%, transparent 48%), ${model.effectiveBg}`
         : model.effectiveBg};
       color: ${model.effectiveText};
       padding: 28px;

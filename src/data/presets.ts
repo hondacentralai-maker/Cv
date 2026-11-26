@@ -19,18 +19,62 @@ export const ACCENT_OPTIONS: AccentOption[] = [
   { hex: '#4338CA', soft: '#EEF2FF', name: 'نيلي إبداعي' },
   { hex: '#9A3412', soft: '#FFF7ED', name: 'برونزي معماري' },
   { hex: '#1E293B', soft: '#F1F5F9', name: 'رمادي داكن' },
+  { hex: '#18181B', soft: '#F4F4F5', name: 'أسود سويسري أحادي' },
+  { hex: '#6D28D9', soft: '#F5F3FF', name: 'بنفسجي SaaS حديث' },
+  { hex: '#BE123C', soft: '#FFF1F2', name: 'ياقوتي تحريري' },
+  { hex: '#047857', soft: '#ECFDF5', name: 'أخضر تقني داكن' },
 ];
 
 export interface LayoutPresetOption {
   id: TemplateId;
   name: string;
   desc: string;
+  inspiration?: string;
 }
 
 export const LAYOUT_PRESETS: LayoutPresetOption[] = [
-  { id: 'executive', name: 'تنفيذي كلاسيكي', desc: 'هيكل منظم ووقور للأعمال' },
-  { id: 'creative', name: 'إبداعي شبكي', desc: 'واجهة بصرية وشبكة مشاريع' },
-  { id: 'minimal', name: 'مبسط عصري', desc: 'تركيز تحريري هادئ ومساحات بيضاء' },
+  {
+    id: 'executive',
+    name: 'تنفيذي كلاسيكي',
+    desc: 'هيكل منظم ووقور للأعمال',
+    inspiration: 'قياسي',
+  },
+  {
+    id: 'creative',
+    name: 'إبداعي شبكي',
+    desc: 'واجهة بصرية وشبكة مشاريع',
+    inspiration: 'قياسي',
+  },
+  {
+    id: 'minimal',
+    name: 'مبسط عصري',
+    desc: 'تركيز تحريري هادئ ومساحات بيضاء',
+    inspiration: 'قياسي',
+  },
+  {
+    id: 'bento',
+    name: 'بنتو جريد (Bento)',
+    desc: 'بطاقات معيارية متجاورة على طراز لوحات المنتجات الحديثة',
+    inspiration: 'GitHub Bento UI',
+  },
+  {
+    id: 'obsidian',
+    name: 'داكن تقني (Obsidian)',
+    desc: 'ثيم داكن باحترافية المطورين مع لمسات Terminal وخطوط بارزة',
+    inspiration: 'GitHub Dark Dev',
+  },
+  {
+    id: 'swiss_editorial',
+    name: 'سويسري تحريري (Swiss)',
+    desc: 'شبكة معمارية بحدود دقيقة وتباين طباعي عالي التنظيم',
+    inspiration: 'Swiss & Reactive',
+  },
+  {
+    id: 'sidebar_pro',
+    name: 'عمود جانبي (Sidebar Pro)',
+    desc: 'عمود جانبي للهوية والمهارات مع مسار واسع للخبرات والأعمال',
+    inspiration: 'GitProfile Split',
+  },
 ];
 
 export type EditorSectionId =

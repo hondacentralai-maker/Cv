@@ -13,7 +13,15 @@ export const PresetIdSchema = z.enum([
 ]);
 export type PresetId = z.infer<typeof PresetIdSchema>;
 
-export const TemplateIdSchema = z.enum(['executive', 'creative', 'minimal']);
+export const TemplateIdSchema = z.enum([
+  'executive',
+  'creative',
+  'minimal',
+  'bento',
+  'obsidian',
+  'swiss_editorial',
+  'sidebar_pro',
+]);
 export type TemplateId = z.infer<typeof TemplateIdSchema>;
 
 export const AvailabilityIdSchema = z.enum([
@@ -119,6 +127,10 @@ export const CardTemplateIdSchema = z.enum([
   'executive_dark',
   'minimal_swiss',
   'creative_mesh',
+  'bento_tile',
+  'glass_aurora',
+  'terminal_dev',
+  'editorial_stripe',
 ]);
 export type CardTemplateId = z.infer<typeof CardTemplateIdSchema>;
 
@@ -139,6 +151,8 @@ export const CardPatternSchema = z.enum([
   'grid',
   'waves',
   'circuit',
+  'diagonal',
+  'topography',
 ]);
 export type CardPattern = z.infer<typeof CardPatternSchema>;
 

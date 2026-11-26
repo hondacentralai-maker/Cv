@@ -165,13 +165,18 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
   const template = d.template;
   const isCreative = template === 'creative';
   const isMinimal = template === 'minimal';
+  const isBento = template === 'bento';
+  const isObsidian = template === 'obsidian';
+  const isSwiss = template === 'swiss_editorial';
+  const isSidebarPro = template === 'sidebar_pro';
+  const useGridProjects = isCreative || isBento || isObsidian;
 
   const avatarMarkup = safeAvatar
     ? `<div class="avatar"><img src="${escapeHtml(safeAvatar)}" alt="${escapeHtml(p.fullName)}" /></div>`
     : `<div class="avatar avatar-initials">${initials}</div>`;
 
   const availBadgeMarkup = availMeta.badge
-    ? `<span class="avail-badge ${isCreative ? 'avail-dark' : 'avail-light'}"><span class="avail-dot"></span>${escapeHtml(availMeta.badge)}</span>`
+    ? `<span class="avail-badge ${isCreative || isObsidian ? 'avail-dark' : 'avail-light'}"><span class="avail-dot"></span>${escapeHtml(availMeta.badge)}</span>`
     : '';
 
   const contactChips = [
@@ -202,6 +207,80 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
         </div>
         ${p.bio ? `<p class="bio">${escapeHtml(p.bio)}</p>` : ''}
         ${contactChips ? `<div class="contacts">${contactChips}</div>` : ''}
+      </header>
+    `
+    : isObsidian
+    ? `
+      <header class="hero hero-obsidian">
+        <div class="obsidian-top">
+          <div class="win-dots" aria-hidden="true"><span></span><span></span><span></span><small dir="ltr">~/portfolio/profile</small></div>
+          ${availBadgeMarkup}
+        </div>
+        <div class="hero-identity">
+          ${avatarMarkup}
+          <div>
+            <h1>${escapeHtml(p.fullName)}</h1>
+            <p class="job-title">${escapeHtml(p.jobTitle)}</p>
+          </div>
+        </div>
+        ${p.bio ? `<p class="bio">${escapeHtml(p.bio)}</p>` : ''}
+        ${contactChips ? `<div class="contacts">${contactChips}</div>` : ''}
+      </header>
+    `
+    : isBento
+    ? `
+      <header class="bento-hero-grid">
+        <div class="panel bento-main">
+          <div class="hero-identity">
+            ${avatarMarkup}
+            <div>
+              <div class="hero-title-row">
+                <h1>${escapeHtml(p.fullName)}</h1>
+                ${availBadgeMarkup}
+              </div>
+              <p class="job-title">${escapeHtml(p.jobTitle)}</p>
+            </div>
+          </div>
+          ${p.bio ? `<p class="bio">${escapeHtml(p.bio)}</p>` : ''}
+        </div>
+        <div class="bento-side">
+          <div class="bento-side-label">ملخص سريع والتواصل</div>
+          <div class="bento-side-contacts">${contactChips}</div>
+        </div>
+      </header>
+    `
+    : isSwiss
+    ? `
+      <header class="hero hero-swiss">
+        <div class="swiss-grid">
+          <div class="hero-identity">
+            ${safeAvatar ? avatarMarkup : ''}
+            <div>
+              <div class="hero-minimal-tag">
+                <span class="swiss-eyebrow">SWISS GRID PORTFOLIO</span>
+                ${availBadgeMarkup}
+              </div>
+              <h1>${escapeHtml(p.fullName)}</h1>
+              <p class="job-title">${escapeHtml(p.jobTitle)}</p>
+            </div>
+          </div>
+          <div class="swiss-contacts">${contactChips}</div>
+        </div>
+        ${p.bio ? `<p class="bio">${escapeHtml(p.bio)}</p>` : ''}
+      </header>
+    `
+    : isSidebarPro
+    ? `
+      <header class="hero hero-sidebar">
+        <div class="stack">
+          ${avatarMarkup}
+          <div>
+            <h1>${escapeHtml(p.fullName)}</h1>
+            <p class="job-title">${escapeHtml(p.jobTitle)}</p>
+          </div>
+          ${availBadgeMarkup}
+        </div>
+        ${contactChips ? `<div class="contacts contacts-exec">${contactChips}</div>` : ''}
       </header>
     `
     : isMinimal
@@ -250,7 +329,7 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
           <h2><span class="accent-pill"></span>أبرز المشاريع والأعمال</h2>
           <span class="section-count">${data.projects.length} أعمال</span>
         </div>
-        <div class="${isCreative ? 'projects-grid' : 'stack'}">
+        <div class="${useGridProjects ? 'projects-grid' : 'stack'}">
           ${data.projects
             .map((proj) => {
               const safeUrl = sanitizeUrl(proj.url);
@@ -435,10 +514,11 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
     :root {
       --accent: ${accentMeta.hex};
       --accent-soft: ${accentMeta.soft};
-      --surface: #F8FAFC;
-      --ink: #0F172A;
-      --muted: #475569;
-      --line: #E2E8F0;
+      --surface: ${isObsidian ? '#020617' : isBento ? '#F5F5F7' : isSwiss ? '#FAFAFA' : '#F8FAFC'};
+      --card-bg: ${isObsidian ? '#111827' : '#FFFFFF'};
+      --ink: ${isObsidian ? '#F8FAFC' : '#0F172A'};
+      --muted: ${isObsidian ? '#CBD5E1' : '#475569'};
+      --line: ${isObsidian ? '#1E293B' : isSwiss ? '#0F172A' : '#E2E8F0'};
     }
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -451,14 +531,30 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
     }
     a { color: inherit; text-decoration: none; }
     .container {
-      max-width: 880px;
+      max-width: ${isSidebarPro ? '980px' : '880px'};
       margin: 0 auto;
-      background: ${isMinimal ? '#FFFFFF' : '#F8FAFC'};
-      border: 1px solid var(--line);
-      border-radius: 24px;
+      background: ${isObsidian ? '#0B1120' : isMinimal || isSwiss ? '#FFFFFF' : isBento ? '#F5F5F7' : '#F8FAFC'};
+      border: ${isSwiss ? '2px' : '1px'} solid var(--line);
+      border-radius: ${isSwiss ? '0px' : '24px'};
       padding: 28px;
-      box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.08);
+      box-shadow: ${isSwiss ? 'none' : '0 10px 30px -12px rgba(15, 23, 42, 0.08)'};
     }
+    .sidebar-layout { display: grid; grid-template-columns: 280px 1fr; gap: 22px; align-items: start; }
+    .sidebar-col { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .bento-hero-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+    .bento-main { border-radius: 20px; }
+    .bento-side { background: var(--accent); color: #FFFFFF; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+    .bento-side-label { font-size: 11px; font-weight: 700; opacity: 0.85; }
+    .bento-side-contacts .contacts { margin-top: 6px; padding-top: 8px; flex-direction: column; gap: 6px; }
+    .hero-obsidian { background: #111827; border: 1px solid #1E293B; border-radius: 18px; padding: 22px; color: #FFFFFF; }
+    .obsidian-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid #1E293B; }
+    .win-dots { display: flex; align-items: center; gap: 6px; }
+    .win-dots span { width: 9px; height: 9px; border-radius: 999px; background: #475569; display: inline-block; }
+    .win-dots small { font-family: monospace; font-size: 11px; color: #94A3B8; margin-right: 6px; }
+    .hero-swiss { border: 2px solid #0F172A; background: #FFFFFF; padding: 22px; }
+    .swiss-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; border-bottom: 1px solid #0F172A; padding-bottom: 14px; margin-bottom: 12px; }
+    .swiss-eyebrow { font-size: 10px; font-weight: 700; padding: 2px 6px; border: 1px solid #0F172A; background: var(--accent-soft); color: var(--accent); }
+    .swiss-contacts .contacts { margin-top: 0; padding-top: 0; border-top: 0; color: var(--muted); flex-direction: column; gap: 4px; }
     .stack { display: flex; flex-direction: column; gap: 12px; }
     .stack-lg { display: flex; flex-direction: column; gap: 18px; }
     .section { margin-top: 26px; }
@@ -557,16 +653,16 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
     .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
     .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
     .panel {
-      background: #FFFFFF;
+      background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: ${isSwiss ? '0px' : '16px'};
       padding: 18px;
     }
     .card { display: block; transition: border-color 0.15s, box-shadow 0.15s; }
     .card-boxed {
-      background: #FFFFFF;
+      background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: ${isSwiss ? '0px' : isBento ? '20px' : '16px'};
       padding: 16px;
     }
     a.card-boxed:hover { border-color: #CBD5E1; box-shadow: 0 4px 14px -6px rgba(15, 23, 42, 0.1); }
@@ -579,8 +675,8 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 6px;
-      background: var(--accent-soft);
-      color: var(--accent);
+      background: ${isObsidian ? 'rgba(255,255,255,0.1)' : 'var(--accent-soft)'};
+      color: ${isObsidian ? '#E2E8F0' : 'var(--accent)'};
       margin-bottom: 6px;
     }
     h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--ink); }
@@ -592,38 +688,38 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
       border-radius: 10px;
       font-size: 12px;
       font-weight: 600;
-      background: var(--accent-soft);
-      color: var(--accent);
+      background: ${isObsidian ? 'rgba(16, 185, 129, 0.14)' : 'var(--accent-soft)'};
+      color: ${isObsidian ? '#A7F3D0' : 'var(--accent)'};
     }
-    .company { font-size: 12.5px; font-weight: 600; color: var(--accent); margin-top: 2px; }
+    .company { font-size: 12.5px; font-weight: 600; color: ${isObsidian ? '#93C5FD' : 'var(--accent)'}; margin-top: 2px; }
     .period-pill {
       font-size: 11.5px;
       font-weight: 600;
       color: var(--muted);
-      background: #F1F5F9;
+      background: ${isObsidian ? '#1E293B' : '#F1F5F9'};
       padding: 3px 10px;
       border-radius: 8px;
     }
     .bullets { margin: 10px 0 0; padding: 0 18px 0 0; font-size: 13px; color: var(--muted); }
     .bullets li + li { margin-top: 4px; }
-    .divider-top { padding-top: 14px; border-top: 1px solid #F1F5F9; }
+    .divider-top { padding-top: 14px; border-top: 1px solid var(--line); }
     .tags { display: flex; flex-wrap: wrap; gap: 8px; }
     .skill-tag {
       padding: 6px 12px;
-      border-radius: 10px;
+      border-radius: ${isSwiss ? '0px' : '10px'};
       font-size: 12.5px;
       font-weight: 600;
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: ${isObsidian ? '#1E293B' : isSwiss ? '#FFFFFF' : 'var(--accent-soft)'};
+      color: ${isObsidian ? '#E2E8F0' : isSwiss ? '#0F172A' : 'var(--accent)'};
+      border: 1px solid ${isObsidian ? '#334155' : isSwiss ? '#0F172A' : 'rgba(15, 23, 42, 0.08)'};
     }
     .edu-deg { font-size: 14px; font-weight: 700; color: var(--ink); }
     .edu-inst { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
     .testimonial { margin: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
-    .quote { margin: 0; font-size: 13px; color: #334155; }
+    .quote { margin: 0; font-size: 13px; color: var(--muted); }
     .testimonial-foot {
       padding-top: 10px;
-      border-top: 1px solid #F1F5F9;
+      border-top: 1px solid var(--line);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -645,8 +741,8 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
       align-items: center;
       gap: 8px;
       padding: 8px 14px;
-      border-radius: 12px;
-      background: #FFFFFF;
+      border-radius: ${isSwiss ? '0px' : '12px'};
+      background: var(--card-bg);
       border: 1px solid var(--line);
       font-size: 12.5px;
       font-weight: 600;
@@ -663,6 +759,9 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
       font-size: 11.5px;
       color: #94A3B8;
     }
+    @media (max-width: 720px) {
+      .sidebar-layout, .bento-hero-grid, .swiss-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 600px) {
       .container { padding: 18px; border-radius: 16px; }
       .hero-creative, .exec-body { padding: 18px; }
@@ -671,14 +770,36 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
 </head>
 <body>
   <main class="container">
-    ${heroHtml}
-    ${projectsHtml}
-    ${experienceHtml}
-    ${skillsHtml}
-    ${eduHtml}
-    ${testimonialsHtml}
-    ${languagesHtml}
-    ${linksHtml}
+    ${
+      isSidebarPro
+        ? `<div class="sidebar-layout">
+            <aside class="sidebar-col">
+              ${heroHtml}
+              ${skillsHtml}
+              ${languagesHtml}
+              ${linksHtml}
+            </aside>
+            <div>
+              ${
+                p.bio
+                  ? `<section class="panel"><h2 class="section-title"><span class="accent-pill"></span>النبذة المهنية</h2><p class="bio" style="margin-top:0">${escapeHtml(p.bio)}</p></section>`
+                  : ''
+              }
+              ${projectsHtml}
+              ${experienceHtml}
+              ${eduHtml}
+              ${testimonialsHtml}
+            </div>
+          </div>`
+        : `${heroHtml}
+           ${projectsHtml}
+           ${experienceHtml}
+           ${skillsHtml}
+           ${eduHtml}
+           ${testimonialsHtml}
+           ${languagesHtml}
+           ${linksHtml}`
+    }
     <footer class="site-footer">
       <span>صُنع عبر منصة <strong>بصمة | Basma</strong></span>
       <span>ملف بورتفوليو مستقل يعمل محلياً دون اتصال</span>

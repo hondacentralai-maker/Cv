@@ -17,8 +17,11 @@ export interface CardTemplateOption {
   id: CardTemplateId;
   name: string;
   desc: string;
+  category: 'clean' | 'dark' | 'modern';
+  inspiration: string;
   recommendedBg: string;
   recommendedText: string;
+  recommendedAccent?: string;
   defaultPattern: CardPattern;
 }
 
@@ -27,14 +30,50 @@ export const CARD_TEMPLATES: CardTemplateOption[] = [
     id: 'modern_split',
     name: 'عصري متوازن',
     desc: 'شريط هوية جانبي وأولوية بصرية واضحة للاسم والتواصل',
+    category: 'modern',
+    inspiration: 'قياسي',
     recommendedBg: '#0F172A',
     recommendedText: '#FFFFFF',
     defaultPattern: 'dots',
   },
   {
+    id: 'bento_tile',
+    name: 'بنتو معياري (Bento)',
+    desc: 'مربعات معيارية منظمة مستوحاة من لوحات المنتجات على GitHub',
+    category: 'modern',
+    inspiration: 'GitHub Bento',
+    recommendedBg: '#F5F5F7',
+    recommendedText: '#0F172A',
+    defaultPattern: 'none',
+  },
+  {
+    id: 'glass_aurora',
+    name: 'زجاجي متدرج (Glass Aurora)',
+    desc: 'خلفية شفق متوهجة مع طبقة زجاجية شفافة وتأثير Frosted Glass',
+    category: 'modern',
+    inspiration: 'GitHub Glass UI',
+    recommendedBg: '#1E1B4B',
+    recommendedText: '#F8FAFC',
+    recommendedAccent: '#C084FC',
+    defaultPattern: 'none',
+  },
+  {
+    id: 'terminal_dev',
+    name: 'الطرفية التقنية (Terminal)',
+    desc: 'واجهة مطورين أصلية بنمط GitHub Dark مع شريط نافذة ومسار كود',
+    category: 'dark',
+    inspiration: 'GitHub Dev CLI',
+    recommendedBg: '#0D1117',
+    recommendedText: '#F0F6FC',
+    recommendedAccent: '#2EA043',
+    defaultPattern: 'grid',
+  },
+  {
     id: 'executive_dark',
     name: 'تنفيذي داكن فاخر',
     desc: 'لمسة رسمية عميقة بإطار مميز وخط فاصل أنيق',
+    category: 'dark',
+    inspiration: 'Executive Dark',
     recommendedBg: '#0B1120',
     recommendedText: '#F8FAFC',
     defaultPattern: 'circuit',
@@ -43,14 +82,29 @@ export const CARD_TEMPLATES: CardTemplateOption[] = [
     id: 'minimal_swiss',
     name: 'سويسري أبيض للطباعة',
     desc: 'خلفية ورقية نقية عالية التباين واقتصادية في حبر الطباعة',
+    category: 'clean',
+    inspiration: 'Swiss Grid',
     recommendedBg: '#FFFFFF',
     recommendedText: '#0F172A',
     defaultPattern: 'grid',
   },
   {
+    id: 'editorial_stripe',
+    name: 'مطبعي تحريري (Editorial)',
+    desc: 'تصميم طباعي مستوحى من قوالب Reactive Resume بعلامات قص هندسية',
+    category: 'clean',
+    inspiration: 'Reactive Print',
+    recommendedBg: '#FAF8F5',
+    recommendedText: '#18181B',
+    recommendedAccent: '#BE123C',
+    defaultPattern: 'topography',
+  },
+  {
     id: 'creative_mesh',
     name: 'إبداعي هندسي',
     desc: 'تدرج لوني مستوحى من هويتك مع شكل زخرفي ناعم',
+    category: 'modern',
+    inspiration: 'Gradient Mesh',
     recommendedBg: '#134E4A',
     recommendedText: '#FFFFFF',
     defaultPattern: 'waves',
@@ -217,6 +271,38 @@ export const CARD_PALETTES: CardPaletteOption[] = [
     accentColor: '#F59E0B',
     useBrandAccent: false,
   },
+  {
+    id: 'github_dark',
+    name: 'GitHub Dark التقني',
+    bgColor: '#0D1117',
+    textColor: '#F0F6FC',
+    accentColor: '#2EA043',
+    useBrandAccent: false,
+  },
+  {
+    id: 'vercel_mono',
+    name: 'أحادي داكن + أزرق',
+    bgColor: '#09090B',
+    textColor: '#FAFAFA',
+    accentColor: '#3B82F6',
+    useBrandAccent: false,
+  },
+  {
+    id: 'aurora_violet',
+    name: 'شفق بنفسجي (Aurora)',
+    bgColor: '#1E1B4B',
+    textColor: '#F8FAFC',
+    accentColor: '#C084FC',
+    useBrandAccent: false,
+  },
+  {
+    id: 'swiss_editorial_red',
+    name: 'ورق سويسري + ياقوتي',
+    bgColor: '#FAF8F5',
+    textColor: '#18181B',
+    accentColor: '#BE123C',
+    useBrandAccent: false,
+  },
 ];
 
 export const CARD_PATTERNS: { id: CardPattern; label: string }[] = [
@@ -225,6 +311,8 @@ export const CARD_PATTERNS: { id: CardPattern; label: string }[] = [
   { id: 'grid', label: 'شبكة هندسية' },
   { id: 'waves', label: 'أقواس انسيابية' },
   { id: 'circuit', label: 'خطوط تقنية' },
+  { id: 'diagonal', label: 'خطوط قطرية معمارية' },
+  { id: 'topography', label: 'خطوط كونتور ناعمة' },
 ];
 
 export const CARD_CORNER_OPTIONS: { id: CardCornerStyle; label: string; radiusPx: number }[] = [

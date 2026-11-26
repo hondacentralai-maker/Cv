@@ -41,17 +41,28 @@ export const BusinessCardVisual: React.FC<BusinessCardVisualProps> = ({
   const backgroundStyle =
     template === 'creative_mesh'
       ? `linear-gradient(135deg, ${model.effectiveBg} 0%, ${model.effectiveAccent} 100%)`
+      : template === 'glass_aurora'
+      ? `radial-gradient(circle at 84% 18%, ${hexWithAlpha(model.effectiveAccent, 0.72)} 0%, transparent 52%), radial-gradient(circle at 16% 86%, ${hexWithAlpha(model.effectiveAccent, 0.52)} 0%, transparent 48%), ${model.effectiveBg}`
       : model.effectiveBg;
+
+  const isTerminal = template === 'terminal_dev';
+  const isGlass = template === 'glass_aurora';
+  const isBentoTile = template === 'bento_tile';
+  const isEditorial = template === 'editorial_stripe';
 
   const containerStyle: React.CSSProperties = {
     containerType: 'inline-size',
     aspectRatio: isPortrait ? '55 / 85' : '85 / 55',
     background: backgroundStyle,
     color: model.effectiveText,
-    borderRadius,
+    borderRadius: isEditorial && !printPhysical ? '4px' : borderRadius,
     border:
       template === 'executive_dark'
         ? `1.5px solid ${hexWithAlpha(model.effectiveAccent, 0.7)}`
+        : isTerminal
+        ? '1px solid #30363D'
+        : isEditorial
+        ? `1.5px solid ${hexWithAlpha(model.effectiveText, 0.35)}`
         : `1px solid ${model.borderColor}`,
     ...(printPhysical
       ? {
@@ -111,6 +122,41 @@ export const BusinessCardVisual: React.FC<BusinessCardVisualProps> = ({
               fill="none"
               stroke={accentCol}
               strokeWidth="1.5"
+            />
+          ))}
+        </svg>
+      );
+    }
+
+    if (pattern === 'diagonal') {
+      const pid = `diag-${patternUid}`;
+      return (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+          <defs>
+            <pattern id={pid} width="16" height="16" patternUnits="userSpaceOnUse">
+              <path d="M-4,4 l8,-8 M0,16 l16,-16 M12,20 l8,-8" stroke={strokeCol} strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill={`url(#${pid})`} />
+        </svg>
+      );
+    }
+
+    if (pattern === 'topography') {
+      return (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 400 260"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {[0, 26, 52, 78].map((offset) => (
+            <path
+              key={offset}
+              d={`M -20 ${40 + offset} C 85 ${10 + offset}, 170 ${125 + offset}, 280 ${55 + offset} S 390 ${105 + offset}, 430 ${65 + offset}`}
+              fill="none"
+              stroke={accentCol}
+              strokeWidth="1.2"
             />
           ))}
         </svg>
@@ -251,12 +297,88 @@ export const BusinessCardVisual: React.FC<BusinessCardVisualProps> = ({
           aria-hidden="true"
         />
       )}
+      {isGlass && (
+        <div
+          className="absolute inset-[2.6cqi] rounded-2xl pointer-events-none border"
+          style={{
+            backgroundColor: hexWithAlpha('#FFFFFF', model.isLightBg ? 0.56 : 0.1),
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderColor: hexWithAlpha('#FFFFFF', model.isLightBg ? 0.6 : 0.24),
+          }}
+          aria-hidden="true"
+        />
+      )}
+      {isTerminal && (
+        <div
+          className="absolute inset-x-0 top-0 flex items-center justify-between px-[3.5cqi] border-b pointer-events-none"
+          style={{
+            height: isPortrait ? '7.2cqi' : '6.2cqi',
+            backgroundColor: hexWithAlpha('#FFFFFF', model.isLightBg ? 0.06 : 0.05),
+            borderColor: model.borderColor,
+          }}
+          aria-hidden="true"
+        >
+          <div className="flex items-center gap-[1.1cqi]">
+            <span className="rounded-full bg-rose-500/85" style={{ width: '1.6cqi', height: '1.6cqi' }} />
+            <span className="rounded-full bg-amber-400/85" style={{ width: '1.6cqi', height: '1.6cqi' }} />
+            <span className="rounded-full bg-emerald-400/85" style={{ width: '1.6cqi', height: '1.6cqi' }} />
+          </div>
+          <span
+            dir="ltr"
+            className="font-mono"
+            style={{ fontSize: isPortrait ? '2.4cqi' : '1.8cqi', color: model.mutedText }}
+          >
+            ~/basma-card.vcf
+          </span>
+        </div>
+      )}
+      {isBentoTile && (
+        <div
+          className="absolute inset-[2.2cqi] rounded-2xl pointer-events-none border"
+          style={{
+            backgroundColor: hexWithAlpha(model.isLightBg ? '#FFFFFF' : '#FFFFFF', model.isLightBg ? 0.72 : 0.05),
+            borderColor: model.borderColor,
+          }}
+          aria-hidden="true"
+        />
+      )}
+      {isEditorial && (
+        <>
+          <div
+            className="absolute inset-y-0 left-0 pointer-events-none"
+            style={{ width: '1.1cqi', backgroundColor: model.effectiveAccent }}
+            aria-hidden="true"
+          />
+          <span
+            className="absolute top-[1.5cqi] right-[2cqi] font-mono leading-none pointer-events-none"
+            style={{ fontSize: '2.2cqi', color: model.mutedText }}
+            aria-hidden="true"
+          >
+            +
+          </span>
+          <span
+            className="absolute bottom-[1.5cqi] left-[2.5cqi] font-mono leading-none pointer-events-none"
+            style={{ fontSize: '2.2cqi', color: model.mutedText }}
+            aria-hidden="true"
+          >
+            +
+          </span>
+        </>
+      )}
 
       {/* Card Inner Body */}
       <div
         className="relative z-10 h-full w-full flex flex-col justify-between"
         style={{
           padding: isPortrait ? '6.5cqi' : '5.5cqi',
+          paddingTop: isTerminal
+            ? isPortrait
+              ? '10.5cqi'
+              : '9.2cqi'
+            : isPortrait
+            ? '6.5cqi'
+            : '5.5cqi',
           paddingRight:
             template === 'modern_split'
               ? isPortrait

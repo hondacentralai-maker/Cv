@@ -22,8 +22,11 @@ export const DesignForm: React.FC<DesignFormProps> = ({ design, onChange }) => {
     <div className="space-y-5">
       {/* Layout Presets */}
       <div className="space-y-2.5">
-        <h3 className="text-sm font-bold text-ink">اختر قالب العرض</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-ink">اختر قالب العرض ({LAYOUT_PRESETS.length} قوالب)</h3>
+          <span className="text-[11px] text-muted">يتضمن قوالب مستوحاة من GitHub</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {LAYOUT_PRESETS.map((tpl) => {
             const active = design.template === tpl.id;
             return (
@@ -37,14 +40,21 @@ export const DesignForm: React.FC<DesignFormProps> = ({ design, onChange }) => {
                     : 'bg-white border-line hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between gap-1.5 mb-1">
                   <span className="text-xs font-bold text-ink">{tpl.name}</span>
-                  {active && (
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: 'var(--accent)' }}
-                    />
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {tpl.inspiration && tpl.inspiration !== 'قياسي' && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        {tpl.inspiration}
+                      </span>
+                    )}
+                    {active && (
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: 'var(--accent)' }}
+                      />
+                    )}
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted leading-snug">{tpl.desc}</p>
               </button>

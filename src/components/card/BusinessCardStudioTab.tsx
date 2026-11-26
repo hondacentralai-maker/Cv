@@ -590,7 +590,12 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
               <div className="space-y-5">
                 {/* Visual Template Radio Choice Cards */}
                 <div className="space-y-2">
-                  <span className="block text-xs font-bold text-ink">قالب الكارت الهندسي</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-ink">
+                      قالب الكارت الهندسي ({CARD_TEMPLATES.length} تصاميم احترافية)
+                    </span>
+                    <span className="text-[10.5px] text-muted">تتضمن تصاميم GitHub مفتوحة المصدر</span>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {CARD_TEMPLATES.map((tpl) => {
                       const active = card.template === tpl.id;
@@ -610,13 +615,23 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                                 template: tpl.id,
                                 bgColor: tpl.recommendedBg,
                                 textColor: tpl.recommendedText,
+                                ...(tpl.recommendedAccent
+                                  ? { useBrandAccent: false, accentColor: tpl.recommendedAccent }
+                                  : {}),
                                 pattern: tpl.defaultPattern,
                               }))
                             }
                             className="visually-hidden"
                           />
-                          <div>
-                            <div className="text-xs font-bold text-ink">{tpl.name}</div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs font-bold text-ink">{tpl.name}</span>
+                              {tpl.inspiration !== 'قياسي' && (
+                                <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                  {tpl.inspiration}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-muted mt-0.5 leading-snug">{tpl.desc}</p>
                           </div>
                           <span
