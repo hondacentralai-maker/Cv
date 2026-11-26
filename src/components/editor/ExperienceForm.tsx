@@ -15,11 +15,18 @@ interface ExperienceFormProps {
 interface ExpDraft {
   role: string;
   company: string;
+  location: string;
   period: string;
   achievements: string;
 }
 
-const EMPTY_EXP: ExpDraft = { role: '', company: '', period: '', achievements: '' };
+const EMPTY_EXP: ExpDraft = {
+  role: '',
+  company: '',
+  location: '',
+  period: '',
+  achievements: '',
+};
 
 interface EduDraft {
   degree: string;
@@ -86,6 +93,7 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
               ...x,
               role: editExpDraft.role.trim(),
               company: editExpDraft.company.trim(),
+              location: editExpDraft.location.trim(),
               period: editExpDraft.period.trim(),
               achievements: editExpDraft.achievements.trim(),
             }
@@ -103,6 +111,7 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
       id: `e_${Date.now()}`,
       role: newExpDraft.role.trim(),
       company: newExpDraft.company.trim(),
+      location: newExpDraft.location.trim(),
       period: newExpDraft.period.trim(),
       achievements: newExpDraft.achievements.trim(),
     };
@@ -211,7 +220,7 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
                     placeholder="المسمى الوظيفي *"
                     className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <input
                       type="text"
                       required
@@ -220,6 +229,15 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
                         setEditExpDraft({ ...editExpDraft, company: e.target.value })
                       }
                       placeholder="اسم الجهة / الشركة *"
+                      className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
+                    />
+                    <input
+                      type="text"
+                      value={editExpDraft.location}
+                      onChange={(e) =>
+                        setEditExpDraft({ ...editExpDraft, location: e.target.value })
+                      }
+                      placeholder="الموقع (مثال: الرياض / عن بُعد)"
                       className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
                     />
                     <input
@@ -277,7 +295,8 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
                 <div className="min-w-0 space-y-1">
                   <div className="text-xs font-bold text-ink">{exp.role}</div>
                   <div className="text-[11px] text-muted">
-                    {exp.company} • {exp.period}
+                    {exp.company}
+                    {exp.location ? ` (${exp.location})` : ''} • {exp.period}
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
@@ -312,6 +331,7 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
                       setEditExpDraft({
                         role: exp.role,
                         company: exp.company,
+                        location: exp.location ?? '',
                         period: exp.period,
                         achievements: exp.achievements,
                       });
@@ -359,13 +379,20 @@ export const ExperienceForm: React.FC<ExperienceFormProps> = ({
             placeholder="المسمى الوظيفي *"
             className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <input
               type="text"
               required
               value={newExpDraft.company}
               onChange={(e) => setNewExpDraft({ ...newExpDraft, company: e.target.value })}
               placeholder="اسم الجهة / الشركة *"
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
+            />
+            <input
+              type="text"
+              value={newExpDraft.location}
+              onChange={(e) => setNewExpDraft({ ...newExpDraft, location: e.target.value })}
+              placeholder="الموقع (مثال: جدة / عن بُعد)"
               className="w-full px-3 py-2 rounded-xl border border-line text-xs focus:outline-none focus:border-teal-600"
             />
             <input

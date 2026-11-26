@@ -123,6 +123,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
           <ProofForm
             testimonials={data.testimonials}
             languages={data.languages}
+            certificates={data.certificates}
+            awards={data.awards}
+            volunteer={data.volunteer}
             onChangeTestimonials={(testimonials, ensureVisible) =>
               onUpdateData((prev) => ({
                 ...prev,
@@ -138,6 +141,33 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 languages,
                 design: ensureVisible
                   ? { ...prev.design, blocks: { ...prev.design.blocks, languages: true } }
+                  : prev.design,
+              }))
+            }
+            onChangeCertificates={(certificates, ensureVisible) =>
+              onUpdateData((prev) => ({
+                ...prev,
+                certificates,
+                design: ensureVisible
+                  ? { ...prev.design, blocks: { ...prev.design.blocks, certificates: true } }
+                  : prev.design,
+              }))
+            }
+            onChangeAwards={(awards, ensureVisible) =>
+              onUpdateData((prev) => ({
+                ...prev,
+                awards,
+                design: ensureVisible
+                  ? { ...prev.design, blocks: { ...prev.design.blocks, awards: true } }
+                  : prev.design,
+              }))
+            }
+            onChangeVolunteer={(volunteer, ensureVisible) =>
+              onUpdateData((prev) => ({
+                ...prev,
+                volunteer,
+                design: ensureVisible
+                  ? { ...prev.design, blocks: { ...prev.design.blocks, volunteer: true } }
                   : prev.design,
               }))
             }

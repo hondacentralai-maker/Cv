@@ -1,6 +1,12 @@
 import QRCode from 'qrcode';
-import { getAccentMeta, getAvailabilityMeta, getInitials } from '../data/presets';
+import {
+  getAccentMeta,
+  getAvailabilityMeta,
+  getInitials,
+  getWorkModeLabel,
+} from '../data/presets';
 import type { PortfolioData } from '../types/portfolio';
+import { buildJsonResumeStandard } from './atsEngine';
 import { escapeHtml, sanitizeAvatarSrc, sanitizeFilenamePart, sanitizeUrl } from './sanitize';
 
 function cleanVCardValue(val: string): string {
@@ -158,6 +164,7 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
   const d = data.design;
   const accentMeta = getAccentMeta(d.accent);
   const availMeta = getAvailabilityMeta(p.availability);
+  const workModeLabel = getWorkModeLabel(p.workModePreference);
   const safeAvatar = sanitizeAvatarSrc(p.avatarDataUrl);
   const safePrimaryLink = sanitizeUrl(p.primaryPortfolioLink);
   const initials = escapeHtml(getInitials(p.fullName));
@@ -375,7 +382,9 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
                   <div class="row-between">
                     <div>
                       <h3>${escapeHtml(exp.role)}</h3>
-                      <div class="company">${escapeHtml(exp.company)}</div>
+                      <div class="company">${escapeHtml(exp.company)}${
+                        exp.location?.trim() ? ` — ${escapeHtml(exp.location.trim())}` : ''
+                      }</div>
                     </div>
                     <span class="period-pill">${escapeHtml(exp.period)}</span>
                   </div>
@@ -427,6 +436,108 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
         </div>
       </section>
     `
+      : '';
+
+  const certificatesHtml =
+    d.blocks.certificates && data.certificates.length > 0
+      ? `
+      <section class="section">
+        <h2 class="section-title"><span class="accent-pill"></span>الشهادات المهنية والاعتمادات</h2>
+        <div class="${isMinimal ? 'stack' : 'panel stack'}">
+          ${data.certificates
+            .map((cert, idx) => {
+              const safeCertUrl = sanitizeUrl(cert.url);
+              return `
+              <div class="row-between ${idx > 0 ? 'divider-top' : ''}">
+                <div>
+                  <div class="edu-deg">${escapeHtml(cert.name)}</div>
+                  <div class="edu-inst">${escapeHtml(cert.issuer)}${
+                    cert.credentialId.trim()
+                      ? ` • ID: ${escapeHtml(cert.credentialId.trim())}`
+                      : ''
+                  }</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${cert.date.trim() ? `<span class="period-pill">${escapeHtml(cert.date)}</span>` : ''}
+                  ${
+                    safeCertUrl
+                      ? `<a class="contact-link" style="font-size:11.5px;color:var(--accent);font-weight:700" href="${escapeHtml(safeCertUrl)}" target="_blank" rel="noopener noreferrer">تحقق ↗</a>`
+                      : ''
+                  }
+                </div>
+              </div>
+            `;
+            })
+            .join('')}
+        </div>
+      </section>
+    `
+      : '';
+
+  const awardsHtml =
+    d.blocks.awards && data.awards.length > 0
+      ? `
+      <section class="section">
+        <h2 class="section-title"><span class="accent-pill"></span>الجوائز والتكريم</h2>
+        <div class="${isMinimal ? 'stack' : 'panel stack'}">
+          ${data.awards
+            .map(
+              (aw, idx) => `
+              <div class="${idx > 0 ? 'divider-top' : ''}">
+                <div class="row-between">
+                  <div>
+                    <div class="edu-deg">${escapeHtml(aw.title)}</div>
+                    ${aw.awarder.trim() ? `<div class="edu-inst">${escapeHtml(aw.awarder)}</div>` : ''}
+                  </div>
+                  ${aw.date.trim() ? `<span class="period-pill">${escapeHtml(aw.date)}</span>` : ''}
+                </div>
+                ${aw.summary.trim() ? `<p class="desc">${escapeHtml(aw.summary)}</p>` : ''}
+              </div>
+            `
+            )
+            .join('')}
+        </div>
+      </section>
+    `
+      : '';
+
+  const volunteerHtml =
+    d.blocks.volunteer && data.volunteer.length > 0
+      ? `
+      <section class="section">
+        <h2 class="section-title"><span class="accent-pill"></span>العمل التطوعي والمبادرات</h2>
+        <div class="${isMinimal ? 'stack' : 'panel stack'}">
+          ${data.volunteer
+            .map(
+              (v, idx) => `
+              <div class="${idx > 0 ? 'divider-top' : ''}">
+                <div class="row-between">
+                  <div>
+                    <div class="edu-deg">${escapeHtml(v.role)} — ${escapeHtml(v.organization)}</div>
+                  </div>
+                  ${v.period.trim() ? `<span class="period-pill">${escapeHtml(v.period)}</span>` : ''}
+                </div>
+                ${v.summary.trim() ? `<p class="desc">${escapeHtml(v.summary)}</p>` : ''}
+              </div>
+            `
+            )
+            .join('')}
+        </div>
+      </section>
+    `
+      : '';
+
+  const recruiterChips = [
+    workModeLabel ? `نظام العمل: ${workModeLabel}` : '',
+    p.noticePeriod.trim() ? `الجاهزية: ${p.noticePeriod.trim()}` : '',
+    p.workAuthorization.trim() ? p.workAuthorization.trim() : '',
+  ].filter(Boolean);
+
+  const recruiterHtml =
+    recruiterChips.length > 0
+      ? `<div class="tags" style="margin-top:14px">${recruiterChips
+          .map((rc) => `<span class="lang-tag" style="padding:5px 10px;font-size:11.5px">${escapeHtml(rc)}</span>`)
+          .join('')}</div>`
       : '';
 
   const testimonialsHtml =
@@ -788,14 +899,21 @@ export function buildStandaloneHtmlDocument(data: PortfolioData): string {
               ${projectsHtml}
               ${experienceHtml}
               ${eduHtml}
+              ${certificatesHtml}
+              ${awardsHtml}
+              ${volunteerHtml}
               ${testimonialsHtml}
             </div>
           </div>`
         : `${heroHtml}
+           ${recruiterHtml}
            ${projectsHtml}
            ${experienceHtml}
            ${skillsHtml}
            ${eduHtml}
+           ${certificatesHtml}
+           ${awardsHtml}
+           ${volunteerHtml}
            ${testimonialsHtml}
            ${languagesHtml}
            ${linksHtml}`
@@ -813,4 +931,14 @@ export function downloadStandaloneHtml(data: PortfolioData): void {
   const html = buildStandaloneHtmlDocument(data);
   const slug = sanitizeFilenamePart(data.profile.fullName);
   triggerDownloadBlob(`basma-portfolio-${slug}.html`, html, 'text/html;charset=utf-8');
+}
+
+export function downloadJsonResumeFile(data: PortfolioData): void {
+  const slug = sanitizeFilenamePart(data.profile.fullName);
+  const jsonResume = buildJsonResumeStandard(data);
+  triggerDownloadBlob(
+    `resume-${slug}.json`,
+    JSON.stringify(jsonResume, null, 2),
+    'application/json;charset=utf-8'
+  );
 }

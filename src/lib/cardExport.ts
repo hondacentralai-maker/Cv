@@ -504,6 +504,9 @@ export async function renderCardSideToCanvas(
       const contactRows = [
         model.phone ? { text: model.phone, ltr: true } : null,
         model.email ? { text: model.email, ltr: true } : null,
+        model.bookingUrl
+          ? { text: model.bookingUrl.replace(/^https?:\/\//i, ''), ltr: true }
+          : null,
         model.website ? { text: model.website.replace(/^https?:\/\//i, ''), ltr: true } : null,
         model.city ? { text: model.city, ltr: false } : null,
       ].filter((x): x is { text: string; ltr: boolean } => Boolean(x));
@@ -649,6 +652,26 @@ export async function renderCardSideToCanvas(
         ctx.textBaseline = 'bottom';
         ctx.font = `500 18px ${FONT_FAMILY}`;
         ctx.fillText(model.website.replace(/^https?:\/\//i, ''), infoX, h - pad);
+      }
+
+      const backFooterMeta = [
+        model.timezoneBadge ? `GMT ${model.timezoneBadge}` : '',
+        model.quickResponseTag ? model.quickResponseTag : '',
+      ]
+        .filter(Boolean)
+        .join('  •  ');
+      if (backFooterMeta) {
+        ctx.fillStyle = model.secondaryText;
+        ctx.direction = 'rtl';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.font = `600 17px ${FONT_FAMILY}`;
+        ctx.fillText(
+          backFooterMeta,
+          infoX,
+          model.website ? h - pad - 28 : h - pad,
+          infoWidth
+        );
       }
     } else {
       // Portrait back layout
@@ -864,6 +887,7 @@ export function buildStandaloneInteractiveCardHtml(
           ${model.email ? `<div dir="ltr" style="text-align:right">${escapeHtml(model.email)}</div>` : ''}
           ${model.city ? `<div>${escapeHtml(model.city)}</div>` : ''}
           ${model.website ? `<div dir="ltr" style="text-align:right">${escapeHtml(model.website)}</div>` : ''}
+          ${model.bookingUrl ? `<div dir="ltr" style="text-align:right">📅 ${escapeHtml(model.bookingUrl)}</div>` : ''}
         </div>
       </div>
       <div class="qr-panel">
@@ -887,6 +911,11 @@ export function buildStandaloneInteractiveCardHtml(
     <button type="button" class="primary" onclick="downloadVcf()">
       حفظ جهة الاتصال (.vcf)
     </button>
+    ${
+      model.bookingUrl
+        ? `<a href="${escapeHtml(model.bookingUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;border-radius:12px;border:1px solid #CBD5E1;padding:10px 16px;font-size:13px;font-weight:700;background:#FFF;color:#0F172A">حجز موعد ↗</a>`
+        : ''
+    }
   </div>
   <script>
     var vcardContent = ${safeVcardJson};

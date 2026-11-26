@@ -91,7 +91,7 @@ export const EDITOR_SECTIONS: { id: EditorSectionId; label: string }[] = [
   { id: 'projects', label: 'المشاريع' },
   { id: 'experience', label: 'الخبرات والتعليم' },
   { id: 'skills', label: 'المهارات والروابط' },
-  { id: 'proof', label: 'التوصيات واللغات' },
+  { id: 'proof', label: 'الشهادات والتوصيات' },
 ];
 
 export interface AvailabilityOption {
@@ -175,6 +175,33 @@ export function isDemoIdentity(profile: ProfileData): boolean {
   return !email || email.endsWith('@basma-demo.sa');
 }
 
+export const WORK_MODE_OPTIONS: { id: ProfileData['workModePreference']; label: string; shortLabel: string }[] = [
+  { id: '', label: 'غير محدد (لا يظهر في السيرة)', shortLabel: '' },
+  { id: 'flexible', label: 'مرن (حضوري أو عن بُعد)', shortLabel: 'عمل مرن' },
+  { id: 'remote', label: 'عن بُعد بالكامل (Remote)', shortLabel: 'عمل عن بُعد' },
+  { id: 'hybrid', label: 'هجين (Hybrid)', shortLabel: 'عمل هجين' },
+  { id: 'onsite', label: 'حضوري في مقر العمل', shortLabel: 'عمل حضوري' },
+];
+
+export const TIMEZONE_OPTIONS: { id: string; label: string; badge: string }[] = [
+  { id: '', label: 'بدون تحديد المنطقة الزمنية', badge: '' },
+  { id: 'Asia/Riyadh', label: 'الرياض / الدمام (GMT+3)', badge: 'GMT+3' },
+  { id: 'Asia/Dubai', label: 'دبي / أبوظبي (GMT+4)', badge: 'GMT+4' },
+  { id: 'Asia/Kuwait', label: 'الكويت / الدوحة / المنامة (GMT+3)', badge: 'GMT+3' },
+  { id: 'Africa/Cairo', label: 'القاهرة (GMT+2/+3)', badge: 'GMT+2' },
+  { id: 'Asia/Amman', label: 'عمّان / بغداد (GMT+3)', badge: 'GMT+3' },
+  { id: 'Africa/Casablanca', label: 'الرباط / الدار البيضاء (GMT+1)', badge: 'GMT+1' },
+  { id: 'Europe/London', label: 'لندن / GMT', badge: 'GMT+0' },
+];
+
+export function getWorkModeLabel(mode: ProfileData['workModePreference']): string {
+  return WORK_MODE_OPTIONS.find((w) => w.id === mode)?.shortLabel ?? '';
+}
+
+export function getTimezoneBadge(tz: string): string {
+  return TIMEZONE_OPTIONS.find((t) => t.id === tz)?.badge ?? tz;
+}
+
 const DEFAULT_LANGUAGES = [
   { id: 'lg1', name: 'العربية', level: 'اللغة الأم' },
   { id: 'lg2', name: 'الإنجليزية', level: 'جيد جداً (مهني)' },
@@ -185,12 +212,43 @@ const ALL_BLOCKS = {
   experience: true,
   skills: true,
   education: true,
+  certificates: true,
+  awards: true,
+  volunteer: true,
   testimonials: true,
   languages: true,
   links: true,
 };
 
-type PresetBaseData = Omit<PortfolioData, 'card'>;
+interface SeedProfile {
+  fullName: string;
+  jobTitle: string;
+  city: string;
+  email: string;
+  phone: string;
+  hidePhoneInPortfolio: boolean;
+  bio: string;
+  availability: AvailabilityId;
+  avatarDataUrl: string;
+  primaryPortfolioLink: string;
+}
+
+interface SeedExperienceItem {
+  id: string;
+  role: string;
+  company: string;
+  period: string;
+  achievements: string;
+  location?: string;
+}
+
+type PresetBaseData = Omit<
+  PortfolioData,
+  'card' | 'profile' | 'experience' | 'certificates' | 'awards' | 'volunteer'
+> & {
+  profile: SeedProfile;
+  experience: SeedExperienceItem[];
+};
 
 const PRESETS_DATA: Record<PresetId, PresetBaseData> = {
   dev: {
@@ -996,8 +1054,63 @@ const PRESETS_DATA: Record<PresetId, PresetBaseData> = {
 
 export function buildPresetData(presetKey: PresetId = 'dev'): PortfolioData {
   const base = structuredClone(PRESETS_DATA[presetKey] ?? PRESETS_DATA.dev);
+
+  const presetCertificates =
+    presetKey === 'dev'
+      ? [
+          {
+            id: 'cert1',
+            name: 'AWS Certified Solutions Architect – Associate',
+            issuer: 'Amazon Web Services',
+            date: '2024',
+            credentialId: 'AWS-SA-94821',
+            url: 'https://aws.amazon.com/verification',
+          },
+        ]
+      : [];
+
+  const presetAwards =
+    presetKey === 'dev'
+      ? [
+          {
+            id: 'aw1',
+            title: 'جائزة أفضل هندسة برمجية في مبادرة التميز التقني',
+            awarder: 'شركة مدار للتقنية المالية',
+            date: '2025',
+            summary: 'تكريم لقيادة إعادة بناء بوابة الدفع ورفع الاعتمادية إلى 99.96%.',
+          },
+        ]
+      : [];
+
+  const presetVolunteer =
+    presetKey === 'freshgrad'
+      ? [
+          {
+            id: 'vol1',
+            role: 'منظم ورش تحليل البيانات للطلاب',
+            organization: 'النادي التقني الطلابي — جامعة الملك سعود',
+            period: '2024 – 2026',
+            summary: 'تنظيم 6 ورش عملية في Excel وPower BI بحضور أكثر من 320 طالباً.',
+          },
+        ]
+      : [];
+
   return {
     ...base,
+    profile: {
+      ...base.profile,
+      workModePreference: 'flexible',
+      noticePeriod: presetKey === 'freshgrad' ? 'متاح فوراً' : 'شهر واحد',
+      workAuthorization: '',
+      timezone: 'Asia/Riyadh',
+    },
+    experience: base.experience.map((e) => ({
+      ...e,
+      location: e.location ?? '',
+    })),
+    certificates: presetCertificates,
+    awards: presetAwards,
+    volunteer: presetVolunteer,
     card: {
       ...DEFAULT_BUSINESS_CARD_CONFIG,
       accentColor: base.design.accent,

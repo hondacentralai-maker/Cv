@@ -1,4 +1,5 @@
 import React from 'react';
+import { getWorkModeLabel } from '../../data/presets';
 import { sanitizeUrl } from '../../lib/sanitize';
 import type { PortfolioData } from '../../types/portfolio';
 
@@ -9,10 +10,17 @@ interface AtsSheetProps {
 export const AtsSheet: React.FC<AtsSheetProps> = ({ data }) => {
   const p = data.profile;
   const safePrimaryLink = sanitizeUrl(p.primaryPortfolioLink);
+  const workModeLabel = getWorkModeLabel(p.workModePreference);
 
   const contactParts = [p.city, p.email, p.phone, safePrimaryLink]
     .map((x) => x.trim())
     .filter(Boolean);
+
+  const recruiterFacts = [
+    workModeLabel ? `نظام العمل: ${workModeLabel}` : '',
+    p.noticePeriod.trim() ? `الجاهزية: ${p.noticePeriod.trim()}` : '',
+    p.workAuthorization.trim() ? `الوضع النظامي: ${p.workAuthorization.trim()}` : '',
+  ].filter(Boolean);
 
   return (
     <article
@@ -37,6 +45,11 @@ export const AtsSheet: React.FC<AtsSheetProps> = ({ data }) => {
                 </span>
               </React.Fragment>
             ))}
+          </p>
+        )}
+        {recruiterFacts.length > 0 && (
+          <p className="text-[11px] font-medium text-neutral-700 mt-1.5">
+            {recruiterFacts.join(' | ')}
           </p>
         )}
       </header>
@@ -70,6 +83,7 @@ export const AtsSheet: React.FC<AtsSheetProps> = ({ data }) => {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h3 className="text-[13px] font-bold text-black">
                       {exp.role} — {exp.company}
+                      {exp.location?.trim() ? ` (${exp.location.trim()})` : ''}
                     </h3>
                     <span className="text-xs font-medium text-neutral-700">{exp.period}</span>
                   </div>
@@ -129,7 +143,7 @@ export const AtsSheet: React.FC<AtsSheetProps> = ({ data }) => {
       {data.education.length > 0 && (
         <section className="mt-5 ats-section-item">
           <h2 className="text-sm font-bold text-black pb-1 border-b border-neutral-400">
-            التعليم والشهادات
+            التعليم والشهادات الأكاديمية
           </h2>
           <ul className="mt-2 space-y-1.5 text-xs sm:text-[13px] text-neutral-900">
             {data.education.map((ed) => (
@@ -138,6 +152,82 @@ export const AtsSheet: React.FC<AtsSheetProps> = ({ data }) => {
                   <strong>{ed.degree}</strong> — {ed.institution}
                 </span>
                 <span className="text-xs text-neutral-700">{ed.year}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Professional Certificates */}
+      {data.certificates.length > 0 && (
+        <section className="mt-5">
+          <h2 className="text-sm font-bold text-black pb-1 border-b border-neutral-400">
+            الشهادات المهنية والاعتمادات
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-[13px] text-neutral-900">
+            {data.certificates.map((cert) => {
+              const safeCertUrl = sanitizeUrl(cert.url);
+              return (
+                <li
+                  key={cert.id}
+                  className="ats-section-item flex flex-wrap items-baseline justify-between gap-2"
+                >
+                  <span>
+                    <strong>{cert.name}</strong> — {cert.issuer}
+                    {cert.credentialId.trim() ? ` (رقم الاعتماد: ${cert.credentialId.trim()})` : ''}
+                    {safeCertUrl ? ` — ${safeCertUrl}` : ''}
+                  </span>
+                  {cert.date.trim() && <span className="text-xs text-neutral-700">{cert.date}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* Awards & Honors */}
+      {data.awards.length > 0 && (
+        <section className="mt-5">
+          <h2 className="text-sm font-bold text-black pb-1 border-b border-neutral-400">
+            الجوائز والتكريم
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-[13px] text-neutral-900">
+            {data.awards.map((aw) => (
+              <li key={aw.id} className="ats-section-item">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span>
+                    <strong>{aw.title}</strong>
+                    {aw.awarder.trim() ? ` — ${aw.awarder}` : ''}
+                  </span>
+                  {aw.date.trim() && <span className="text-xs text-neutral-700">{aw.date}</span>}
+                </div>
+                {aw.summary.trim() && (
+                  <p className="text-xs text-neutral-800 mt-0.5">{aw.summary}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Volunteer & Community */}
+      {data.volunteer.length > 0 && (
+        <section className="mt-5">
+          <h2 className="text-sm font-bold text-black pb-1 border-b border-neutral-400">
+            العمل التطوعي والمبادرات
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-[13px] text-neutral-900">
+            {data.volunteer.map((v) => (
+              <li key={v.id} className="ats-section-item">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span>
+                    <strong>{v.role}</strong> — {v.organization}
+                  </span>
+                  {v.period.trim() && <span className="text-xs text-neutral-700">{v.period}</span>}
+                </div>
+                {v.summary.trim() && (
+                  <p className="text-xs text-neutral-800 mt-0.5">{v.summary}</p>
+                )}
               </li>
             ))}
           </ul>

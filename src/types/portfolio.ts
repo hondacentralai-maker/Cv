@@ -37,11 +37,23 @@ export const BlocksSchema = z.object({
   experience: z.boolean().default(true),
   skills: z.boolean().default(true),
   education: z.boolean().default(true),
+  certificates: z.boolean().default(true),
+  awards: z.boolean().default(true),
+  volunteer: z.boolean().default(true),
   testimonials: z.boolean().default(true),
   languages: z.boolean().default(true),
   links: z.boolean().default(true),
 });
 export type BlocksConfig = z.infer<typeof BlocksSchema>;
+
+export const WorkModePreferenceSchema = z.enum([
+  '',
+  'remote',
+  'hybrid',
+  'onsite',
+  'flexible',
+]);
+export type WorkModePreference = z.infer<typeof WorkModePreferenceSchema>;
 
 export const ProfileSchema = z.object({
   fullName: z.string().default(''),
@@ -52,6 +64,10 @@ export const ProfileSchema = z.object({
   hidePhoneInPortfolio: z.boolean().default(true),
   bio: z.string().default(''),
   availability: AvailabilityIdSchema.default('open_both'),
+  workModePreference: WorkModePreferenceSchema.default(''),
+  noticePeriod: z.string().default(''),
+  workAuthorization: z.string().default(''),
+  timezone: z.string().default(''),
   avatarDataUrl: z.string().default(''),
   primaryPortfolioLink: z.string().default(''),
 });
@@ -65,6 +81,9 @@ export const DesignSchema = z.object({
     experience: true,
     skills: true,
     education: true,
+    certificates: true,
+    awards: true,
+    volunteer: true,
     testimonials: true,
     languages: true,
     links: true,
@@ -86,6 +105,7 @@ export const ExperienceItemSchema = z.object({
   id: z.string().min(1),
   role: z.string().default(''),
   company: z.string().default(''),
+  location: z.string().default(''),
   period: z.string().default(''),
   achievements: z.string().default(''),
 });
@@ -98,6 +118,34 @@ export const EducationItemSchema = z.object({
   year: z.string().default(''),
 });
 export type EducationItem = z.infer<typeof EducationItemSchema>;
+
+export const CertificateItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().default(''),
+  issuer: z.string().default(''),
+  date: z.string().default(''),
+  credentialId: z.string().default(''),
+  url: z.string().default(''),
+});
+export type CertificateItem = z.infer<typeof CertificateItemSchema>;
+
+export const AwardItemSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().default(''),
+  awarder: z.string().default(''),
+  date: z.string().default(''),
+  summary: z.string().default(''),
+});
+export type AwardItem = z.infer<typeof AwardItemSchema>;
+
+export const VolunteerItemSchema = z.object({
+  id: z.string().min(1),
+  role: z.string().default(''),
+  organization: z.string().default(''),
+  period: z.string().default(''),
+  summary: z.string().default(''),
+});
+export type VolunteerItem = z.infer<typeof VolunteerItemSchema>;
 
 export const LinkItemSchema = z.object({
   id: z.string().min(1),
@@ -170,8 +218,11 @@ export const CardAvatarModeSchema = z.enum([
 ]);
 export type CardAvatarMode = z.infer<typeof CardAvatarModeSchema>;
 
-export const CardQrTargetSchema = z.enum(['vcard', 'whatsapp', 'link']);
+export const CardQrTargetSchema = z.enum(['vcard', 'whatsapp', 'booking', 'link']);
 export type CardQrTarget = z.infer<typeof CardQrTargetSchema>;
+
+export const VCardVersionSchema = z.enum(['3.0', '4.0']);
+export type VCardVersion = z.infer<typeof VCardVersionSchema>;
 
 export const CardQrPlacementSchema = z.enum(['back', 'front', 'both']);
 export type CardQrPlacement = z.infer<typeof CardQrPlacementSchema>;
@@ -198,16 +249,21 @@ export const DEFAULT_BUSINESS_CARD_CONFIG = {
   customPhone: '',
   customCity: '',
   customWebsite: '',
+  bookingUrl: '',
+  vcardVersion: '3.0' as const,
   avatarMode: 'profile' as const,
   customLogoDataUrl: '',
   qrTarget: 'vcard' as const,
   qrPlacement: 'back' as const,
   qrCaption: 'امسح لحفظ جهة الاتصال',
   whatsappPrefill: 'السلام عليكم، وصلت إليك عبر كارت بصمة الشخصي.',
+  quickResponseTag: '',
   showPhone: true,
   showEmail: true,
   showCity: true,
   showWebsite: true,
+  showBookingOnCard: true,
+  showTimezone: false,
   showAvailabilityBadge: true,
   showSkillsOnBack: true,
   backNote: '',
@@ -246,16 +302,21 @@ export const BusinessCardConfigSchema = z.object({
   customPhone: z.string().default(''),
   customCity: z.string().default(''),
   customWebsite: z.string().default(''),
+  bookingUrl: z.string().default(''),
+  vcardVersion: VCardVersionSchema.default('3.0'),
   avatarMode: CardAvatarModeSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.avatarMode),
   customLogoDataUrl: z.string().default(''),
   qrTarget: CardQrTargetSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.qrTarget),
   qrPlacement: CardQrPlacementSchema.default(DEFAULT_BUSINESS_CARD_CONFIG.qrPlacement),
   qrCaption: z.string().default(DEFAULT_BUSINESS_CARD_CONFIG.qrCaption),
   whatsappPrefill: z.string().default(DEFAULT_BUSINESS_CARD_CONFIG.whatsappPrefill),
+  quickResponseTag: z.string().default(''),
   showPhone: z.boolean().default(true),
   showEmail: z.boolean().default(true),
   showCity: z.boolean().default(true),
   showWebsite: z.boolean().default(true),
+  showBookingOnCard: z.boolean().default(true),
+  showTimezone: z.boolean().default(false),
   showAvailabilityBadge: z.boolean().default(true),
   showSkillsOnBack: z.boolean().default(true),
   backNote: z.string().default(''),
@@ -271,6 +332,9 @@ export const PortfolioDataSchema = z.object({
   projects: z.array(ProjectItemSchema).default([]),
   experience: z.array(ExperienceItemSchema).default([]),
   education: z.array(EducationItemSchema).default([]),
+  certificates: z.array(CertificateItemSchema).default([]),
+  awards: z.array(AwardItemSchema).default([]),
+  volunteer: z.array(VolunteerItemSchema).default([]),
   skills: z.array(z.string()).default([]),
   links: z.array(LinkItemSchema).default([]),
   testimonials: z.array(TestimonialItemSchema).default([]),
@@ -305,6 +369,7 @@ export const JsonBackupEnvelopeSchema = z.object({
 function sanitizeParsedPortfolio(data: PortfolioData): PortfolioData {
   const safeCardLogo = sanitizeAvatarSrc(data.card?.customLogoDataUrl);
   const safeCardWebsite = sanitizeUrl(data.card?.customWebsite);
+  const safeBookingUrl = sanitizeUrl(data.card?.bookingUrl);
   return {
     ...data,
     profile: {
@@ -317,10 +382,15 @@ function sanitizeParsedPortfolio(data: PortfolioData): PortfolioData {
       ...data.card,
       customLogoDataUrl: safeCardLogo,
       customWebsite: safeCardWebsite,
+      bookingUrl: safeBookingUrl,
     },
     projects: data.projects.map((p) => ({
       ...p,
       url: sanitizeUrl(p.url),
+    })),
+    certificates: (data.certificates ?? []).map((c) => ({
+      ...c,
+      url: sanitizeUrl(c.url),
     })),
     links: data.links
       .map((l) => ({

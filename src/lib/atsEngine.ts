@@ -1,4 +1,4 @@
-import type { EditorSectionId } from '../data/presets';
+import { getWorkModeLabel, type EditorSectionId } from '../data/presets';
 import { getActiveWritingAssist } from '../data/writingAssist';
 import type { PortfolioData, PresetId } from '../types/portfolio';
 import { sanitizeUrl } from './sanitize';
@@ -94,11 +94,20 @@ const STOP_WORDS = new Set([
 export function buildPlainTextAts(data: PortfolioData): string {
   const p = data.profile;
   const safePrimaryLink = sanitizeUrl(p.primaryPortfolioLink);
+  const workModeLabel = getWorkModeLabel(p.workModePreference);
   const lines: string[] = [];
 
   lines.push(p.fullName.trim());
   lines.push(p.jobTitle.trim());
   lines.push([p.city, p.email, p.phone, safePrimaryLink].filter((v) => v && v.trim()).join(' | '));
+  const metaLine = [
+    workModeLabel ? `نظام العمل: ${workModeLabel}` : '',
+    p.noticePeriod.trim() ? `الجاهزية: ${p.noticePeriod.trim()}` : '',
+    p.workAuthorization.trim() ? `الوضع النظامي: ${p.workAuthorization.trim()}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+  if (metaLine) lines.push(metaLine);
   lines.push('');
 
   if (p.bio.trim()) {
@@ -110,7 +119,8 @@ export function buildPlainTextAts(data: PortfolioData): string {
   if (data.experience.length > 0) {
     lines.push('الخبرات العملية');
     data.experience.forEach((e) => {
-      lines.push(`${e.role} — ${e.company} (${e.period})`);
+      const loc = e.location?.trim() ? ` - ${e.location.trim()}` : '';
+      lines.push(`${e.role} — ${e.company}${loc} (${e.period})`);
       e.achievements
         .split('\n')
         .map((x) => x.trim())
@@ -136,8 +146,37 @@ export function buildPlainTextAts(data: PortfolioData): string {
   }
 
   if (data.education.length > 0) {
-    lines.push('التعليم والشهادات');
+    lines.push('التعليم والشهادات الأكاديمية');
     data.education.forEach((ed) => lines.push(`${ed.degree} — ${ed.institution} (${ed.year})`));
+    lines.push('');
+  }
+
+  if (data.certificates.length > 0) {
+    lines.push('الشهادات المهنية والاعتمادات');
+    data.certificates.forEach((c) => {
+      const certUrl = sanitizeUrl(c.url);
+      lines.push(
+        `${c.name} — ${c.issuer}${c.date ? ` (${c.date})` : ''}${c.credentialId ? ` [ID: ${c.credentialId}]` : ''}${certUrl ? ` — ${certUrl}` : ''}`
+      );
+    });
+    lines.push('');
+  }
+
+  if (data.awards.length > 0) {
+    lines.push('الجوائز والتكريم');
+    data.awards.forEach((a) => {
+      lines.push(`${a.title}${a.awarder ? ` — ${a.awarder}` : ''}${a.date ? ` (${a.date})` : ''}`);
+      if (a.summary.trim()) lines.push(`- ${a.summary.trim()}`);
+    });
+    lines.push('');
+  }
+
+  if (data.volunteer.length > 0) {
+    lines.push('العمل التطوعي والمبادرات');
+    data.volunteer.forEach((v) => {
+      lines.push(`${v.role} — ${v.organization}${v.period ? ` (${v.period})` : ''}`);
+      if (v.summary.trim()) lines.push(`- ${v.summary.trim()}`);
+    });
     lines.push('');
   }
 
@@ -147,6 +186,97 @@ export function buildPlainTextAts(data: PortfolioData): string {
   }
 
   return lines.join('\n').trim();
+}
+
+/**
+ * Converts Basma portfolio data into the open-source JSON Resume schema standard (jsonresume.org),
+ * compatible with RenderCV, Reactive Resume, and jsonresume-cli tools on GitHub.
+ */
+export function buildJsonResumeStandard(data: PortfolioData): Record<string, unknown> {
+  const p = data.profile;
+  const safePrimary = sanitizeUrl(p.primaryPortfolioLink);
+
+  return {
+    $schema: 'https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json',
+    basics: {
+      name: p.fullName.trim(),
+      label: p.jobTitle.trim(),
+      email: p.email.trim(),
+      phone: p.phone.trim(),
+      url: safePrimary || undefined,
+      summary: p.bio.trim(),
+      location: {
+        city: p.city.trim(),
+      },
+      profiles: data.links
+        .map((lnk) => {
+          const safe = sanitizeUrl(lnk.url);
+          return safe
+            ? {
+                network: lnk.label,
+                url: safe,
+              }
+            : null;
+        })
+        .filter(Boolean),
+    },
+    work: data.experience.map((exp) => ({
+      name: exp.company,
+      position: exp.role,
+      location: exp.location || undefined,
+      summary: exp.period,
+      highlights: exp.achievements
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean),
+    })),
+    volunteer: data.volunteer.map((v) => ({
+      organization: v.organization,
+      position: v.role,
+      summary: v.summary || v.period,
+    })),
+    education: data.education.map((ed) => ({
+      institution: ed.institution,
+      area: ed.degree,
+      endDate: ed.year,
+    })),
+    awards: data.awards.map((a) => ({
+      title: a.title,
+      date: a.date || undefined,
+      awarder: a.awarder || undefined,
+      summary: a.summary || undefined,
+    })),
+    certificates: data.certificates.map((c) => ({
+      name: c.name,
+      date: c.date || undefined,
+      issuer: c.issuer,
+      url: sanitizeUrl(c.url) || undefined,
+    })),
+    skills: [
+      {
+        name: 'Core Skills',
+        keywords: data.skills,
+      },
+    ],
+    languages: data.languages.map((lg) => ({
+      language: lg.name,
+      fluency: lg.level,
+    })),
+    projects: data.projects.map((pr) => ({
+      name: pr.title,
+      description: pr.description,
+      highlights: pr.impact ? [pr.impact] : [],
+      url: sanitizeUrl(pr.url) || undefined,
+      type: pr.category,
+    })),
+    meta: {
+      generator: 'Basma | بصمة (Local-First)',
+      workModePreference: p.workModePreference || undefined,
+      noticePeriod: p.noticePeriod || undefined,
+      workAuthorization: p.workAuthorization || undefined,
+      timezone: p.timezone || undefined,
+    },
+  };
 }
 
 /**

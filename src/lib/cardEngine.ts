@@ -1,4 +1,9 @@
-import { getAccentMeta, getAvailabilityMeta, getInitials } from '../data/presets';
+import {
+  getAccentMeta,
+  getAvailabilityMeta,
+  getInitials,
+  getTimezoneBadge,
+} from '../data/presets';
 import {
   DEFAULT_BUSINESS_CARD_CONFIG,
   type BusinessCardConfig,
@@ -444,6 +449,9 @@ export interface ResolvedBusinessCardModel {
   phone: string;
   city: string;
   website: string;
+  bookingUrl: string;
+  timezoneBadge: string;
+  quickResponseTag: string;
   availabilityBadge: string;
   avatarSrc: string;
   initials: string;
@@ -460,7 +468,7 @@ export interface ResolvedBusinessCardModel {
   vcardPayload: string;
   qrPayload: string;
   qrLabel: string;
-  qrTargetResolved: 'vcard' | 'whatsapp' | 'link';
+  qrTargetResolved: 'vcard' | 'whatsapp' | 'booking' | 'link';
   qrFallbackNotice: string | null;
   skillsTop4: string[];
   backNote: string;
@@ -486,6 +494,11 @@ export function resolveBusinessCardModel(data: PortfolioData): ResolvedBusinessC
   const phone = config.showPhone ? rawPhone : '';
   const city = config.showCity ? rawCity : '';
   const website = config.showWebsite ? rawWebsite : '';
+  const rawBookingUrl = sanitizeUrl(config.bookingUrl);
+  const bookingUrl = config.showBookingOnCard ? rawBookingUrl : '';
+  const timezoneBadge =
+    config.showTimezone && p.timezone.trim() ? getTimezoneBadge(p.timezone.trim()) : '';
+  const quickResponseTag = config.quickResponseTag.trim();
 
   const companyOrBrand = config.companyOrBrand.trim();
   const tagline = config.tagline.trim();
@@ -517,28 +530,36 @@ export function resolveBusinessCardModel(data: PortfolioData): ResolvedBusinessC
   const contrastStatus: 'aaa' | 'aa' | 'low' =
     contrastRatio >= 7 ? 'aaa' : contrastRatio >= 4.5 ? 'aa' : 'low';
 
-  // Compact print-safe vCard 3.0 payload for the card QR
+  // Standards-compliant vCard 3.0 (RFC 2426) or 4.0 (RFC 6350/9554)
   const displayName = fullName || 'Basma Contact';
   const nameParts = displayName.split(/\s+/).filter(Boolean);
   const firstName = nameParts[0] ?? displayName;
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  const isV4 = config.vcardVersion === '4.0';
+
   const vcardLines = [
     'BEGIN:VCARD',
-    'VERSION:3.0',
+    `VERSION:${isV4 ? '4.0' : '3.0'}`,
     `FN:${cleanVCardField(displayName)}`,
     `N:${cleanVCardField(lastName)};${cleanVCardField(firstName)};;;`,
   ];
   if (jobTitle) vcardLines.push(`TITLE:${cleanVCardField(jobTitle)}`);
   if (companyOrBrand) vcardLines.push(`ORG:${cleanVCardField(companyOrBrand)}`);
-  if (email) vcardLines.push(`EMAIL;TYPE=INTERNET:${email}`);
-  if (phone) vcardLines.push(`TEL;TYPE=CELL:${phone}`);
-  if (city) vcardLines.push(`ADR;TYPE=WORK:;;${cleanVCardField(city)};;;;`);
-  if (website) vcardLines.push(`URL:${website}`);
+  if (email) vcardLines.push(`EMAIL;TYPE=${isV4 ? 'work' : 'INTERNET'}:${email}`);
+  if (phone) vcardLines.push(`TEL;TYPE=${isV4 ? 'cell' : 'CELL'}:${phone}`);
+  if (city) vcardLines.push(`ADR;TYPE=${isV4 ? 'work' : 'WORK'}:;;${cleanVCardField(city)};;;;`);
+  if (website) vcardLines.push(isV4 ? `URL;TYPE=work:${website}` : `URL:${website}`);
+  if (bookingUrl) {
+    vcardLines.push(isV4 ? `URL;TYPE=booking:${bookingUrl}` : `URL:${bookingUrl}`);
+  }
+  if (isV4 && p.timezone.trim()) {
+    vcardLines.push(`TZ:${cleanVCardField(p.timezone.trim())}`);
+  }
   if (tagline) vcardLines.push(`NOTE:${cleanVCardField(tagline.slice(0, 90))}`);
   vcardLines.push('END:VCARD');
   const vcardPayload = vcardLines.join('\r\n');
 
-  let qrTargetResolved: 'vcard' | 'whatsapp' | 'link' = config.qrTarget;
+  let qrTargetResolved: 'vcard' | 'whatsapp' | 'booking' | 'link' = config.qrTarget;
   let qrPayload = vcardPayload;
   let qrFallbackNotice: string | null = null;
 
@@ -552,6 +573,13 @@ export function resolveBusinessCardModel(data: PortfolioData): ResolvedBusinessC
     } else {
       qrTargetResolved = 'vcard';
       qrFallbackNotice = 'أضف رقم جوال لتفعيل رابط واتساب في QR (يستخدم vCard حالياً)';
+    }
+  } else if (config.qrTarget === 'booking') {
+    if (rawBookingUrl) {
+      qrPayload = rawBookingUrl;
+    } else {
+      qrTargetResolved = 'vcard';
+      qrFallbackNotice = 'أضف رابط حجز موعد (مثل Cal.com أو Calendly) لتوجيه QR إليه';
     }
   } else if (config.qrTarget === 'link') {
     const fallbackLink = rawWebsite || sanitizeUrl(data.links[0]?.url);
@@ -567,6 +595,8 @@ export function resolveBusinessCardModel(data: PortfolioData): ResolvedBusinessC
     config.qrCaption.trim() ||
     (qrTargetResolved === 'whatsapp'
       ? 'امسح للتواصل عبر واتساب'
+      : qrTargetResolved === 'booking'
+      ? 'امسح لحجز اجتماع سريع'
       : qrTargetResolved === 'link'
       ? 'امسح لزيارة ملفي المهني'
       : 'امسح لحفظ جهة الاتصال');
@@ -588,6 +618,9 @@ export function resolveBusinessCardModel(data: PortfolioData): ResolvedBusinessC
     phone,
     city,
     website,
+    bookingUrl,
+    timezoneBadge,
+    quickResponseTag,
     availabilityBadge,
     avatarSrc,
     initials,

@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { LANGUAGE_LEVELS } from '../../data/presets';
-import type { LanguageItem, TestimonialItem } from '../../types/portfolio';
+import { sanitizeUrl } from '../../lib/sanitize';
+import type {
+  AwardItem,
+  CertificateItem,
+  LanguageItem,
+  TestimonialItem,
+  VolunteerItem,
+} from '../../types/portfolio';
 import { useToast } from '../layout/ToastProvider';
 
 interface ProofFormProps {
   testimonials: TestimonialItem[];
   languages: LanguageItem[];
+  certificates: CertificateItem[];
+  awards: AwardItem[];
+  volunteer: VolunteerItem[];
   onChangeTestimonials: (next: TestimonialItem[], ensureBlockVisible?: boolean) => void;
   onChangeLanguages: (next: LanguageItem[], ensureBlockVisible?: boolean) => void;
+  onChangeCertificates: (next: CertificateItem[], ensureBlockVisible?: boolean) => void;
+  onChangeAwards: (next: AwardItem[], ensureBlockVisible?: boolean) => void;
+  onChangeVolunteer: (next: VolunteerItem[], ensureBlockVisible?: boolean) => void;
 }
 
 interface TestDraft {
@@ -22,8 +35,14 @@ const EMPTY_TEST: TestDraft = { name: '', role: '', quote: '', verified: true };
 export const ProofForm: React.FC<ProofFormProps> = ({
   testimonials,
   languages,
+  certificates,
+  awards,
+  volunteer,
   onChangeTestimonials,
   onChangeLanguages,
+  onChangeCertificates,
+  onChangeAwards,
+  onChangeVolunteer,
 }) => {
   const { showToast } = useToast();
 
@@ -33,6 +52,72 @@ export const ProofForm: React.FC<ProofFormProps> = ({
 
   const [newLangName, setNewLangName] = useState('');
   const [newLangLevel, setNewLangLevel] = useState(LANGUAGE_LEVELS[1] ?? 'متقدم / طليق');
+
+  const [certDraft, setCertDraft] = useState({
+    name: '',
+    issuer: '',
+    date: '',
+    credentialId: '',
+    url: '',
+  });
+  const [awardDraft, setAwardDraft] = useState({
+    title: '',
+    awarder: '',
+    date: '',
+    summary: '',
+  });
+  const [volDraft, setVolDraft] = useState({
+    role: '',
+    organization: '',
+    period: '',
+    summary: '',
+  });
+
+  const handleAddCert = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!certDraft.name.trim() || !certDraft.issuer.trim()) return;
+    const item: CertificateItem = {
+      id: `cert_${Date.now()}`,
+      name: certDraft.name.trim(),
+      issuer: certDraft.issuer.trim(),
+      date: certDraft.date.trim(),
+      credentialId: certDraft.credentialId.trim(),
+      url: sanitizeUrl(certDraft.url),
+    };
+    onChangeCertificates([...certificates, item], true);
+    setCertDraft({ name: '', issuer: '', date: '', credentialId: '', url: '' });
+    showToast(`تمت إضافة الشهادة المهنية «${item.name}»`);
+  };
+
+  const handleAddAward = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!awardDraft.title.trim()) return;
+    const item: AwardItem = {
+      id: `aw_${Date.now()}`,
+      title: awardDraft.title.trim(),
+      awarder: awardDraft.awarder.trim(),
+      date: awardDraft.date.trim(),
+      summary: awardDraft.summary.trim(),
+    };
+    onChangeAwards([...awards, item], true);
+    setAwardDraft({ title: '', awarder: '', date: '', summary: '' });
+    showToast('تمت إضافة الجائزة / التكريم بنجاح');
+  };
+
+  const handleAddVolunteer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!volDraft.role.trim() || !volDraft.organization.trim()) return;
+    const item: VolunteerItem = {
+      id: `vol_${Date.now()}`,
+      role: volDraft.role.trim(),
+      organization: volDraft.organization.trim(),
+      period: volDraft.period.trim(),
+      summary: volDraft.summary.trim(),
+    };
+    onChangeVolunteer([...volunteer, item], true);
+    setVolDraft({ role: '', organization: '', period: '', summary: '' });
+    showToast('تمت إضافة الخبرة التطوعية بنجاح');
+  };
 
   const handleSaveEditTest = (e: React.FormEvent, id: string) => {
     e.preventDefault();
@@ -348,6 +433,236 @@ export const ProofForm: React.FC<ProofFormProps> = ({
           </button>
         </form>
       </div>
+
+      {/* Professional Certificates with Verification Links (JSON Resume & RenderCV standard) */}
+      <div className="space-y-3 pt-4 border-t border-line">
+        <div>
+          <h3 className="text-sm font-bold text-ink">
+            الشهادات المهنية والاعتمادات ({certificates.length})
+          </h3>
+          <p className="text-xs text-muted mt-0.5">
+            تظهر مع رقم الاعتماد ورابط التحقق الرسمي في السيرة الذاتية ATS والبورتفوليو
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          {certificates.map((c) => (
+            <div
+              key={c.id}
+              className="p-3 rounded-xl border border-line bg-slate-50/60 flex items-start justify-between gap-2"
+            >
+              <div className="min-w-0 space-y-0.5">
+                <div className="text-xs font-bold text-ink">{c.name}</div>
+                <div className="text-[11px] text-muted">
+                  {c.issuer}
+                  {c.date ? ` • ${c.date}` : ''}
+                  {c.credentialId ? ` • ID: ${c.credentialId}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeCertificates(certificates.filter((x) => x.id !== c.id));
+                  showToast('تم حذف الشهادة المهنية');
+                }}
+                className="p-1 text-slate-400 hover:text-rose-600 text-xs font-bold shrink-0"
+                aria-label={`حذف شهادة ${c.name}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleAddCert} className="p-3.5 rounded-xl border border-line bg-white space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              type="text"
+              required
+              value={certDraft.name}
+              onChange={(e) => setCertDraft({ ...certDraft, name: e.target.value })}
+              placeholder="اسم الشهادة (مثال: PMP / AWS) *"
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs"
+            />
+            <input
+              type="text"
+              required
+              value={certDraft.issuer}
+              onChange={(e) => setCertDraft({ ...certDraft, issuer: e.target.value })}
+              placeholder="الجهة المانحة (مثال: PMI / Coursera) *"
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
+              value={certDraft.date}
+              onChange={(e) => setCertDraft({ ...certDraft, date: e.target.value })}
+              placeholder="السنة / التاريخ"
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs"
+            />
+            <input
+              type="text"
+              value={certDraft.credentialId}
+              onChange={(e) => setCertDraft({ ...certDraft, credentialId: e.target.value })}
+              placeholder="رقم الشهادة (اختياري)"
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs"
+            />
+            <input
+              type="url"
+              dir="ltr"
+              value={certDraft.url}
+              onChange={(e) => setCertDraft({ ...certDraft, url: e.target.value })}
+              placeholder="رابط التحقق https://..."
+              className="w-full px-3 py-2 rounded-xl border border-line text-xs text-left"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full py-2 rounded-xl text-xs font-bold text-white"
+            style={{ backgroundColor: 'var(--accent)' }}
+          >
+            + إضافة شهادة مهنية
+          </button>
+        </form>
+      </div>
+
+      {/* Awards & Honors */}
+      <details className="p-3.5 rounded-xl bg-slate-50 border border-line space-y-3">
+        <summary className="cursor-pointer text-xs font-bold text-ink select-none flex items-center justify-between">
+          <span>الجوائز والتكريم ({awards.length})</span>
+          <span className="text-[11px] text-muted">+ فتح / إضافة</span>
+        </summary>
+        <div className="space-y-2 pt-2">
+          {awards.map((a) => (
+            <div key={a.id} className="p-2.5 rounded-xl bg-white border border-line flex items-start justify-between gap-2">
+              <div>
+                <div className="text-xs font-bold text-ink">{a.title}</div>
+                <div className="text-[11px] text-muted">
+                  {a.awarder} {a.date ? `• ${a.date}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onChangeAwards(awards.filter((x) => x.id !== a.id))}
+                className="text-slate-400 hover:text-rose-600 font-bold text-xs"
+                aria-label={`حذف جائزة ${a.title}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <form onSubmit={handleAddAward} className="space-y-2">
+            <input
+              type="text"
+              required
+              value={awardDraft.title}
+              onChange={(e) => setAwardDraft({ ...awardDraft, title: e.target.value })}
+              placeholder="عنوان الجائزة أو التكريم *"
+              className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={awardDraft.awarder}
+                onChange={(e) => setAwardDraft({ ...awardDraft, awarder: e.target.value })}
+                placeholder="الجهة المانحة"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+              <input
+                type="text"
+                value={awardDraft.date}
+                onChange={(e) => setAwardDraft({ ...awardDraft, date: e.target.value })}
+                placeholder="السنة"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+            </div>
+            <input
+              type="text"
+              value={awardDraft.summary}
+              onChange={(e) => setAwardDraft({ ...awardDraft, summary: e.target.value })}
+              placeholder="ملخص الإنجاز (اختياري)"
+              className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+            />
+            <button
+              type="submit"
+              className="w-full py-2 rounded-xl text-xs font-bold text-white"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              إضافة الجائزة
+            </button>
+          </form>
+        </div>
+      </details>
+
+      {/* Volunteer & Community Leadership */}
+      <details className="p-3.5 rounded-xl bg-slate-50 border border-line space-y-3">
+        <summary className="cursor-pointer text-xs font-bold text-ink select-none flex items-center justify-between">
+          <span>العمل التطوعي والمبادرات ({volunteer.length})</span>
+          <span className="text-[11px] text-muted">+ فتح / إضافة</span>
+        </summary>
+        <div className="space-y-2 pt-2">
+          {volunteer.map((v) => (
+            <div key={v.id} className="p-2.5 rounded-xl bg-white border border-line flex items-start justify-between gap-2">
+              <div>
+                <div className="text-xs font-bold text-ink">{v.role}</div>
+                <div className="text-[11px] text-muted">
+                  {v.organization} {v.period ? `• ${v.period}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onChangeVolunteer(volunteer.filter((x) => x.id !== v.id))}
+                className="text-slate-400 hover:text-rose-600 font-bold text-xs"
+                aria-label={`حذف تطوع ${v.role}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <form onSubmit={handleAddVolunteer} className="space-y-2">
+            <input
+              type="text"
+              required
+              value={volDraft.role}
+              onChange={(e) => setVolDraft({ ...volDraft, role: e.target.value })}
+              placeholder="الدور التطوعي (مثال: مرشد برمجي) *"
+              className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                required
+                value={volDraft.organization}
+                onChange={(e) => setVolDraft({ ...volDraft, organization: e.target.value })}
+                placeholder="الجهة / المبادرة *"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+              <input
+                type="text"
+                value={volDraft.period}
+                onChange={(e) => setVolDraft({ ...volDraft, period: e.target.value })}
+                placeholder="الفترة"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+            </div>
+            <input
+              type="text"
+              value={volDraft.summary}
+              onChange={(e) => setVolDraft({ ...volDraft, summary: e.target.value })}
+              placeholder="الأثر أو المساهمة"
+              className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+            />
+            <button
+              type="submit"
+              className="w-full py-2 rounded-xl text-xs font-bold text-white"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              إضافة المبادرة التطوعية
+            </button>
+          </form>
+        </div>
+      </details>
     </div>
   );
 };

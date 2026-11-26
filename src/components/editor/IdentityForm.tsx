@@ -1,9 +1,19 @@
 import React, { useRef, useState } from 'react';
-import { AVAILABILITY_OPTIONS, PRESET_LIST } from '../../data/presets';
+import {
+  AVAILABILITY_OPTIONS,
+  PRESET_LIST,
+  TIMEZONE_OPTIONS,
+  WORK_MODE_OPTIONS,
+} from '../../data/presets';
 import { getActiveWritingAssist } from '../../data/writingAssist';
 import { compressAvatarFile } from '../../lib/imageCompress';
 import { isSafeLinkOrEmpty, sanitizeAvatarSrc, sanitizeUrl } from '../../lib/sanitize';
-import type { AvailabilityId, PresetId, ProfileData } from '../../types/portfolio';
+import type {
+  AvailabilityId,
+  PresetId,
+  ProfileData,
+  WorkModePreference,
+} from '../../types/portfolio';
 import { useToast } from '../layout/ToastProvider';
 
 interface IdentityFormProps {
@@ -226,6 +236,85 @@ export const IdentityForm: React.FC<IdentityFormProps> = ({
           ))}
         </select>
       </div>
+
+      {/* GitHub Recruiter & ATS Readiness Details (RenderCV / JSON Resume inspired) */}
+      <details className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 group">
+        <summary className="cursor-pointer text-xs font-bold text-ink select-none flex items-center justify-between gap-2">
+          <span>تفاصيل التوظيف السريعة والـ ATS (اختياري — يُظهرها في السيرة)</span>
+          <span className="text-slate-500 group-open:rotate-180 transition-transform">▾</span>
+        </summary>
+        <div className="mt-3 space-y-3 pt-3 border-t border-slate-200/70">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label htmlFor="inp-workMode" className="block text-[11px] font-semibold text-slate-700">
+                نظام العمل المفضل
+              </label>
+              <select
+                id="inp-workMode"
+                value={profile.workModePreference}
+                onChange={(e) =>
+                  updateField('workModePreference', e.target.value as WorkModePreference)
+                }
+                className="w-full px-2.5 py-2 rounded-xl border border-line bg-white text-xs"
+              >
+                {WORK_MODE_OPTIONS.map((wm) => (
+                  <option key={wm.id} value={wm.id}>
+                    {wm.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="inp-noticePeriod" className="block text-[11px] font-semibold text-slate-700">
+                فترة الإشعار / الجاهزية للانضمام
+              </label>
+              <input
+                id="inp-noticePeriod"
+                type="text"
+                value={profile.noticePeriod}
+                onChange={(e) => updateField('noticePeriod', e.target.value)}
+                placeholder="مثال: متاح فوراً / شهر واحد"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label htmlFor="inp-workAuth" className="block text-[11px] font-semibold text-slate-700">
+                تصريح العمل / الوضع النظامي
+              </label>
+              <input
+                id="inp-workAuth"
+                type="text"
+                value={profile.workAuthorization}
+                onChange={(e) => updateField('workAuthorization', e.target.value)}
+                placeholder="مثال: إقامة قابلة للنقل / مواطن"
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="inp-timezone" className="block text-[11px] font-semibold text-slate-700">
+                المنطقة الزمنية (للعمل عن بُعد والكارت)
+              </label>
+              <select
+                id="inp-timezone"
+                value={profile.timezone}
+                onChange={(e) => updateField('timezone', e.target.value)}
+                className="w-full px-2.5 py-2 rounded-xl border border-line bg-white text-xs"
+              >
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <option key={tz.id} value={tz.id}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </details>
 
       {/* Local Compressed Avatar Upload & Optional URL */}
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">

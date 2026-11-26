@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getAccentMeta, getAvailabilityMeta, getInitials } from '../../data/presets';
+import {
+  getAccentMeta,
+  getAvailabilityMeta,
+  getInitials,
+  getWorkModeLabel,
+} from '../../data/presets';
 import { sanitizeAvatarSrc, sanitizeUrl } from '../../lib/sanitize';
 import type { PortfolioData } from '../../types/portfolio';
 
@@ -595,6 +600,7 @@ export const PortfolioPreviewCanvas: React.FC<PortfolioPreviewCanvasProps> = ({
                       style={{ color: isObsidian ? '#93C5FD' : accentMeta.hex }}
                     >
                       {exp.company}
+                      {exp.location?.trim() ? ` — ${exp.location.trim()}` : ''}
                     </div>
                   </div>
                   <span
@@ -849,6 +855,186 @@ export const PortfolioPreviewCanvas: React.FC<PortfolioPreviewCanvasProps> = ({
       </section>
     ) : null;
 
+  const workModeLabel = getWorkModeLabel(p.workModePreference);
+
+  const certificatesSection =
+    d.blocks.certificates && data.certificates.length > 0 ? (
+      <section className="space-y-2.5">
+        <h2 className={sectionHeadingCls}>
+          {!isSwiss && (
+            <span
+              className="w-1.5 h-4 rounded-full"
+              style={{ backgroundColor: accentMeta.hex }}
+            />
+          )}
+          <span>الشهادات المهنية والاعتمادات</span>
+        </h2>
+        <div
+          className={`grid grid-cols-1 ${
+            viewportMode === 'mobile' ? '' : 'sm:grid-cols-2'
+          } gap-2.5`}
+        >
+          {data.certificates.map((cert) => {
+            const safeUrl = sanitizeUrl(cert.url);
+            return (
+              <div
+                key={cert.id}
+                className={
+                  isObsidian
+                    ? 'bg-[#111827] border border-slate-800 rounded-2xl p-3.5 space-y-1'
+                    : isSwiss
+                    ? 'bg-white border border-slate-900 p-3.5 space-y-1'
+                    : 'bg-white border border-line rounded-2xl p-3.5 space-y-1'
+                }
+              >
+                <div className={`text-xs font-bold ${isObsidian ? 'text-white' : 'text-ink'}`}>
+                  {cert.name}
+                </div>
+                <div className={`text-[11px] ${isObsidian ? 'text-slate-400' : 'text-muted'}`}>
+                  {cert.issuer}
+                  {cert.date ? ` • ${cert.date}` : ''}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10.5px]">
+                  {cert.credentialId && (
+                    <span className={isObsidian ? 'text-slate-300' : 'text-slate-500'}>
+                      رقم الاعتماد: {cert.credentialId}
+                    </span>
+                  )}
+                  {safeUrl && (
+                    <a
+                      href={safeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold hover:underline"
+                      style={{ color: isObsidian ? '#93C5FD' : accentMeta.hex }}
+                    >
+                      تحقق من الشهادة ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    ) : null;
+
+  const awardsSection =
+    d.blocks.awards && data.awards.length > 0 ? (
+      <section className="space-y-2.5">
+        <h2 className={sectionHeadingCls}>
+          {!isSwiss && (
+            <span
+              className="w-1.5 h-4 rounded-full"
+              style={{ backgroundColor: accentMeta.hex }}
+            />
+          )}
+          <span>الجوائز والتكريم</span>
+        </h2>
+        <div className="space-y-2">
+          {data.awards.map((aw) => (
+            <div
+              key={aw.id}
+              className={
+                isObsidian
+                  ? 'bg-[#111827] border border-slate-800 rounded-2xl p-3.5'
+                  : isSwiss
+                  ? 'bg-white border border-slate-900 p-3.5'
+                  : 'bg-white border border-line rounded-2xl p-3.5'
+              }
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div className={`text-xs font-bold ${isObsidian ? 'text-white' : 'text-ink'}`}>
+                  {aw.title}
+                </div>
+                {aw.date && (
+                  <span className={`text-[11px] ${isObsidian ? 'text-slate-400' : 'text-muted'}`}>
+                    {aw.date}
+                  </span>
+                )}
+              </div>
+              {aw.awarder && (
+                <div className={`text-[11px] mt-0.5 ${isObsidian ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {aw.awarder}
+                </div>
+              )}
+              {aw.summary && (
+                <p className={`text-xs mt-1 leading-relaxed ${isObsidian ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {aw.summary}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : null;
+
+  const volunteerSection =
+    d.blocks.volunteer && data.volunteer.length > 0 ? (
+      <section className="space-y-2.5">
+        <h2 className={sectionHeadingCls}>
+          {!isSwiss && (
+            <span
+              className="w-1.5 h-4 rounded-full"
+              style={{ backgroundColor: accentMeta.hex }}
+            />
+          )}
+          <span>العمل التطوعي والمبادرات</span>
+        </h2>
+        <div className="space-y-2">
+          {data.volunteer.map((v) => (
+            <div
+              key={v.id}
+              className={
+                isObsidian
+                  ? 'bg-[#111827] border border-slate-800 rounded-2xl p-3.5'
+                  : isSwiss
+                  ? 'bg-white border border-slate-900 p-3.5'
+                  : 'bg-white border border-line rounded-2xl p-3.5'
+              }
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div className={`text-xs font-bold ${isObsidian ? 'text-white' : 'text-ink'}`}>
+                  {v.role} — {v.organization}
+                </div>
+                {v.period && (
+                  <span className={`text-[11px] ${isObsidian ? 'text-slate-400' : 'text-muted'}`}>
+                    {v.period}
+                  </span>
+                )}
+              </div>
+              {v.summary && (
+                <p className={`text-xs mt-1 leading-relaxed ${isObsidian ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {v.summary}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : null;
+
+  const recruiterStrip =
+    workModeLabel || p.noticePeriod.trim() || p.workAuthorization.trim() ? (
+      <div className="flex flex-wrap gap-2">
+        {workModeLabel && (
+          <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-line text-slate-700">
+            نظام العمل: {workModeLabel}
+          </span>
+        )}
+        {p.noticePeriod.trim() && (
+          <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-line text-slate-700">
+            الجاهزية: {p.noticePeriod.trim()}
+          </span>
+        )}
+        {p.workAuthorization.trim() && (
+          <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-line text-slate-700">
+            {p.workAuthorization.trim()}
+          </span>
+        )}
+      </div>
+    ) : null;
+
   const portfolioBody = isSidebarPro ? (
     <div className={outerCanvasClass}>
       <div
@@ -913,6 +1099,9 @@ export const PortfolioPreviewCanvas: React.FC<PortfolioPreviewCanvasProps> = ({
           {experienceSection}
           {projectsSection}
           {educationSection}
+          {certificatesSection}
+          {awardsSection}
+          {volunteerSection}
           {testimonialsSection}
         </div>
       </div>
@@ -927,10 +1116,14 @@ export const PortfolioPreviewCanvas: React.FC<PortfolioPreviewCanvasProps> = ({
   ) : (
     <div className={outerCanvasClass}>
       {heroSection}
+      {recruiterStrip}
       {projectsSection}
       {experienceSection}
       {skillsSection}
       {educationSection}
+      {certificatesSection}
+      {awardsSection}
+      {volunteerSection}
       {testimonialsSection}
       {languagesSection}
       {linksSection}

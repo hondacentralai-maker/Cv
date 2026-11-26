@@ -5,6 +5,7 @@ import {
   buildShareIntroMessage,
   copyTextToClipboard,
   downloadJsonBackup,
+  downloadJsonResumeFile,
   downloadQrPng,
   downloadStandaloneHtml,
   downloadVCardFile,
@@ -292,6 +293,17 @@ export const BusinessCardExportPanel: React.FC<BusinessCardExportPanelProps> = (
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
           <span>تحميل البورتفوليو كملف HTML مستقل (أوفلاين بالكامل)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            downloadJsonResumeFile(data);
+            showToast('تم تصدير السيرة بصيغة JSON Resume القياسية (لأدوات GitHub)');
+          }}
+          className="sm:col-span-2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors"
+        >
+          <span>تصدير بصيغة JSON Resume القياسية العالمية (resume.json)</span>
         </button>
 
         <button

@@ -246,6 +246,13 @@ export const BusinessCardVisual: React.FC<BusinessCardVisualProps> = ({
   const contactItems = [
     model.phone ? { key: 'phone', text: model.phone, ltr: true } : null,
     model.email ? { key: 'email', text: model.email, ltr: true } : null,
+    model.bookingUrl
+      ? {
+          key: 'booking',
+          text: `📅 ${model.bookingUrl.replace(/^https?:\/\//i, '')}`,
+          ltr: true,
+        }
+      : null,
     model.website
       ? {
           key: 'site',
@@ -597,6 +604,39 @@ export const BusinessCardVisual: React.FC<BusinessCardVisualProps> = ({
                   }}
                 >
                   {model.website.replace(/^https?:\/\//i, '')}
+                </div>
+              )}
+
+              {(model.timezoneBadge || model.quickResponseTag) && (
+                <div
+                  className={`flex flex-wrap gap-[1cqi] ${
+                    isPortrait ? 'justify-center' : 'justify-start'
+                  }`}
+                >
+                  {model.timezoneBadge && (
+                    <span
+                      className="rounded-md font-semibold px-[1.5cqi] py-[0.4cqi] border"
+                      style={{
+                        borderColor: model.borderColor,
+                        color: model.secondaryText,
+                        fontSize: `${(isPortrait ? 2.3 : 1.75) * fontScaleNum}cqi`,
+                      }}
+                    >
+                      🕒 {model.timezoneBadge}
+                    </span>
+                  )}
+                  {model.quickResponseTag && (
+                    <span
+                      className="rounded-md font-semibold px-[1.5cqi] py-[0.4cqi] border"
+                      style={{
+                        borderColor: model.borderColor,
+                        color: model.secondaryText,
+                        fontSize: `${(isPortrait ? 2.3 : 1.75) * fontScaleNum}cqi`,
+                      }}
+                    >
+                      ⚡ {model.quickResponseTag}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

@@ -503,6 +503,42 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                       className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs focus:outline-none focus:border-teal-600"
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label htmlFor={`${baseId}-booking`} className="block text-xs font-bold text-slate-700">
+                        رابط حجز اجتماع (Cal.com / Calendly)
+                      </label>
+                      <input
+                        id={`${baseId}-booking`}
+                        type="url"
+                        dir="ltr"
+                        value={card.bookingUrl}
+                        onChange={(e) => updateCardField('bookingUrl', e.target.value)}
+                        onBlur={() => {
+                          const s = sanitizeUrl(card.bookingUrl);
+                          if (s && s !== card.bookingUrl) updateCardField('bookingUrl', s);
+                        }}
+                        placeholder="https://cal.com/username"
+                        className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs text-left focus:outline-none focus:border-teal-600"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label htmlFor={`${baseId}-resp`} className="block text-xs font-bold text-slate-700">
+                        وسم تواصل بالخلف (اختياري)
+                      </label>
+                      <input
+                        id={`${baseId}-resp`}
+                        type="text"
+                        maxLength={32}
+                        value={card.quickResponseTag}
+                        onChange={(e) => updateCardField('quickResponseTag', e.target.value)}
+                        placeholder="مثال: يرد خلال ساعتين"
+                        className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs focus:outline-none focus:border-teal-600"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Avatar / Custom Logo Controls */}
@@ -899,13 +935,18 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                     {[
                       {
                         id: 'vcard' as const,
-                        title: 'حفظ جهة اتصال فوري (vCard 3.0)',
+                        title: `حفظ جهة اتصال فوري (vCard ${card.vcardVersion})`,
                         desc: 'يفتح شاشة «إضافة جهة اتصال» مباشرة دون إنترنت شاملاً بياناتك الظاهرة.',
                       },
                       {
                         id: 'whatsapp' as const,
                         title: 'فتح محادثة واتساب مباشرة',
                         desc: 'يوجه العميل أو مسؤول التوظيف إلى واتساب برسالة ترحيبية مخصصة.',
+                      },
+                      {
+                        id: 'booking' as const,
+                        title: 'رابط حجز اجتماع مباشر (Cal.com / Calendly)',
+                        desc: 'يتيح لمن يمسح الكارت حجز مكالمة أو مقابلة معك مباشرة.',
                       },
                       {
                         id: 'link' as const,
@@ -931,6 +972,8 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                                 qrCaption:
                                   opt.id === 'whatsapp'
                                     ? 'امسح للتواصل عبر واتساب'
+                                    : opt.id === 'booking'
+                                    ? 'امسح لحجز اجتماع سريع'
                                     : opt.id === 'link'
                                     ? 'امسح لزيارة ملفي المهني'
                                     : 'امسح لحفظ جهة الاتصال',
@@ -1015,6 +1058,23 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                       onChange={(e) => updateCardField('qrCaption', e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs"
                     />
+                    <label htmlFor={`${baseId}-vcardver`} className="block text-xs font-bold text-slate-700 pt-2">
+                      إصدار صيغة ملف جهة الاتصال (.vcf)
+                    </label>
+                    <select
+                      id={`${baseId}-vcardver`}
+                      value={card.vcardVersion}
+                      onChange={(e) =>
+                        updateCardField(
+                          'vcardVersion',
+                          e.target.value as BusinessCardConfig['vcardVersion']
+                        )
+                      }
+                      className="w-full px-2.5 py-2 rounded-xl border border-line bg-white text-xs"
+                    >
+                      <option value="3.0">vCard 3.0 — توافق شامل مع كل هواتف iOS وAndroid (موصى به)</option>
+                      <option value="4.0">vCard 4.0 (RFC 6350) — مع المنطقة الزمنية والروابط المصنفة</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1031,6 +1091,8 @@ export const BusinessCardStudioTab: React.FC<BusinessCardStudioTabProps> = ({
                     { key: 'showEmail' as const, label: 'إظهار البريد الإلكتروني' },
                     { key: 'showCity' as const, label: 'إظهار المدينة / المقر' },
                     { key: 'showWebsite' as const, label: 'إظهار الرابط المهني الرئيسي' },
+                    { key: 'showBookingOnCard' as const, label: 'إظهار رابط حجز الاجتماع (Cal / Calendly)' },
+                    { key: 'showTimezone' as const, label: 'إظهار شارة المنطقة الزمنية بالخلف' },
                     { key: 'showAvailabilityBadge' as const, label: 'إظهار شارة التوفر الوظيفي' },
                     { key: 'showSkillsOnBack' as const, label: 'إظهار أبرز 4 مهارات على الوجه الخلفي' },
                   ].map((item) => (
